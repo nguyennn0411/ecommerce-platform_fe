@@ -1,12 +1,7 @@
-import 'bootstrap/dist/css/bootstrap.min.css';
-import LoginPage from './pages/LoginPage'
+import CheckoutPage from './pages/CheckoutPage';
 
 function App() {
-  return (
-    <>
-      <LoginPage></LoginPage>
-    </>
-  )
+  return <CheckoutPage />;
 }
 
-export default App
+export default App;

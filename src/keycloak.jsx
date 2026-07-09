@@ -22,6 +22,7 @@ export const initAuthentication = (onAuthenticatedCallback) => {
   })
   .catch((err) => {
     console.error("Authentication initialization failed", err);
+    onAuthenticatedCallback(false);
   });
 };
 
