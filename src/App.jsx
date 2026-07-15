@@ -1,10 +1,10 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
-import LoginPage from './pages/LoginPage'
+import ExampleKeyCLoak from './components/ExampleKeyCloak';
 
 function App() {
   return (
     <>
-      <LoginPage></LoginPage>
+      <ExampleKeyCLoak></ExampleKeyCLoak>
     </>
   )
 }
