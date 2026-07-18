@@ -1,8 +1,8 @@
 export const categories = [
-  { id: 'cat-sneakers', name: 'Sneakers' },
-  { id: 'cat-running', name: 'Running' },
-  { id: 'cat-lifestyle', name: 'Lifestyle' },
-  { id: 'cat-outdoor', name: 'Outdoor' },
+  { id: 'cat-sneakers', name: 'Sneaker' },
+  { id: 'cat-running', name: 'Chạy bộ' },
+  { id: 'cat-lifestyle', name: 'Thời trang' },
+  { id: 'cat-outdoor', name: 'Ngoài trời' },
 ]
 
 /** Catalog mock — shape gần với ProductResponse backend */
@@ -12,13 +12,13 @@ export const products = [
     name: 'Apex Runner V2',
     brand: 'StepZone',
     description:
-      'Silhouette chạy phố với đế phản lực và upper knit thoáng. Thiết kế limited drop cho mùa mới.',
+      'Thiết kế chạy phố với đế phản lực và phần thân knit thoáng khí. Phiên bản giới hạn cho mùa mới.',
     categoryId: 'cat-running',
-    categoryName: 'Running',
+    categoryName: 'Chạy bộ',
     basePrice: 6240000,
     status: 'ACTIVE',
-    badge: 'HIGH DEMAND',
-    collection: 'Performance Line',
+    badge: 'ĐANG HOT',
+    collection: 'Dòng hiệu năng',
     images: [
       {
         id: 'img-t1-1',
@@ -40,18 +40,18 @@ export const products = [
       },
     ],
     variants: [
-      { id: 'v-t1-1', size: '40', color: 'Red', sku: 'APX-40-RED' },
-      { id: 'v-t1-2', size: '41', color: 'Red', sku: 'APX-41-RED' },
-      { id: 'v-t1-3', size: '42', color: 'Red', sku: 'APX-42-RED' },
-      { id: 'v-t1-4', size: '43', color: 'Black', sku: 'APX-43-BLK' },
-      { id: 'v-t1-5', size: '44', color: 'Black', sku: 'APX-44-BLK' },
+      { id: 'v-t1-1', size: '40', color: 'Đỏ', sku: 'APX-40-RED' },
+      { id: 'v-t1-2', size: '41', color: 'Đỏ', sku: 'APX-41-RED' },
+      { id: 'v-t1-3', size: '42', color: 'Đỏ', sku: 'APX-42-RED' },
+      { id: 'v-t1-4', size: '43', color: 'Đen', sku: 'APX-43-BLK' },
+      { id: 'v-t1-5', size: '44', color: 'Đen', sku: 'APX-44-BLK' },
     ],
     stocks: [
-      { size: '40', color: 'Red', available: 3, status: 'IN_STOCK' },
-      { size: '41', color: 'Red', available: 0, status: 'OUT_OF_STOCK' },
-      { size: '42', color: 'Red', available: 8, status: 'IN_STOCK' },
-      { size: '43', color: 'Black', available: 2, status: 'IN_STOCK' },
-      { size: '44', color: 'Black', available: 0, status: 'OUT_OF_STOCK' },
+      { size: '40', color: 'Đỏ', available: 3, status: 'IN_STOCK' },
+      { size: '41', color: 'Đỏ', available: 0, status: 'OUT_OF_STOCK' },
+      { size: '42', color: 'Đỏ', available: 8, status: 'IN_STOCK' },
+      { size: '43', color: 'Đen', available: 2, status: 'IN_STOCK' },
+      { size: '44', color: 'Đen', available: 0, status: 'OUT_OF_STOCK' },
     ],
   },
   {
@@ -59,12 +59,12 @@ export const products = [
     name: 'Shadow Strike',
     brand: 'Nike',
     description:
-      'Low-top tối giản, phối đen toàn bộ. Đệm React mềm, phù hợp everyday wear.',
+      'Form thấp tối giản, phối đen toàn bộ. Đệm êm, phù hợp mang hàng ngày.',
     categoryId: 'cat-sneakers',
-    categoryName: 'Sneakers',
+    categoryName: 'Sneaker',
     basePrice: 4940000,
     status: 'ACTIVE',
-    collection: 'Shadow Series',
+    collection: 'Dòng Shadow',
     images: [
       {
         id: 'img-t2-1',
@@ -80,16 +80,16 @@ export const products = [
       },
     ],
     variants: [
-      { id: 'v-t2-1', size: '41', color: 'Black', sku: 'SHD-41-BLK' },
-      { id: 'v-t2-2', size: '42', color: 'Black', sku: 'SHD-42-BLK' },
-      { id: 'v-t2-3', size: '43', color: 'Black', sku: 'SHD-43-BLK' },
-      { id: 'v-t2-4', size: '42', color: 'Grey', sku: 'SHD-42-GRY' },
+      { id: 'v-t2-1', size: '41', color: 'Đen', sku: 'SHD-41-BLK' },
+      { id: 'v-t2-2', size: '42', color: 'Đen', sku: 'SHD-42-BLK' },
+      { id: 'v-t2-3', size: '43', color: 'Đen', sku: 'SHD-43-BLK' },
+      { id: 'v-t2-4', size: '42', color: 'Xám', sku: 'SHD-42-GRY' },
     ],
     stocks: [
-      { size: '41', color: 'Black', available: 5, status: 'IN_STOCK' },
-      { size: '42', color: 'Black', available: 12, status: 'IN_STOCK' },
-      { size: '43', color: 'Black', available: 1, status: 'IN_STOCK' },
-      { size: '42', color: 'Grey', available: 4, status: 'IN_STOCK' },
+      { size: '41', color: 'Đen', available: 5, status: 'IN_STOCK' },
+      { size: '42', color: 'Đen', available: 12, status: 'IN_STOCK' },
+      { size: '43', color: 'Đen', available: 1, status: 'IN_STOCK' },
+      { size: '42', color: 'Xám', available: 4, status: 'IN_STOCK' },
     ],
   },
   {
@@ -97,12 +97,12 @@ export const products = [
     name: 'Orbit Platform',
     brand: 'Adidas',
     description:
-      'Chunky sole platform với upper da lộn. Statement piece cho outfit street.',
+      'Đế chunky platform với thân da lộn. Điểm nhấn mạnh cho outfit đường phố.',
     categoryId: 'cat-lifestyle',
-    categoryName: 'Lifestyle',
+    categoryName: 'Thời trang',
     basePrice: 5460000,
     status: 'ACTIVE',
-    collection: 'Orbit Drop',
+    collection: 'Bộ Orbit',
     images: [
       {
         id: 'img-t3-1',
@@ -118,16 +118,16 @@ export const products = [
       },
     ],
     variants: [
-      { id: 'v-t3-1', size: '39', color: 'White', sku: 'ORB-39-WHT' },
-      { id: 'v-t3-2', size: '40', color: 'White', sku: 'ORB-40-WHT' },
-      { id: 'v-t3-3', size: '41', color: 'White', sku: 'ORB-41-WHT' },
-      { id: 'v-t3-4', size: '42', color: 'White', sku: 'ORB-42-WHT' },
+      { id: 'v-t3-1', size: '39', color: 'Trắng', sku: 'ORB-39-WHT' },
+      { id: 'v-t3-2', size: '40', color: 'Trắng', sku: 'ORB-40-WHT' },
+      { id: 'v-t3-3', size: '41', color: 'Trắng', sku: 'ORB-41-WHT' },
+      { id: 'v-t3-4', size: '42', color: 'Trắng', sku: 'ORB-42-WHT' },
     ],
     stocks: [
-      { size: '39', color: 'White', available: 2, status: 'IN_STOCK' },
-      { size: '40', color: 'White', available: 6, status: 'IN_STOCK' },
-      { size: '41', color: 'White', available: 0, status: 'OUT_OF_STOCK' },
-      { size: '42', color: 'White', available: 3, status: 'IN_STOCK' },
+      { size: '39', color: 'Trắng', available: 2, status: 'IN_STOCK' },
+      { size: '40', color: 'Trắng', available: 6, status: 'IN_STOCK' },
+      { size: '41', color: 'Trắng', available: 0, status: 'OUT_OF_STOCK' },
+      { size: '42', color: 'Trắng', available: 3, status: 'IN_STOCK' },
     ],
   },
   {
@@ -135,12 +135,12 @@ export const products = [
     name: 'Minimalist Low',
     brand: 'StepZone',
     description:
-      'Form thấp sạch sẽ, da Nappa mềm. Phù hợp office-casual và weekend.',
+      'Form thấp gọn gàng, da mềm. Phù hợp đi làm và cuối tuần.',
     categoryId: 'cat-lifestyle',
-    categoryName: 'Lifestyle',
+    categoryName: 'Thời trang',
     basePrice: 3900000,
     status: 'ACTIVE',
-    collection: 'Essence Collection',
+    collection: 'Bộ sưu tập Essence',
     images: [
       {
         id: 'img-n1-1',
@@ -156,16 +156,16 @@ export const products = [
       },
     ],
     variants: [
-      { id: 'v-n1-1', size: '40', color: 'White', sku: 'MIN-40-WHT' },
-      { id: 'v-n1-2', size: '41', color: 'White', sku: 'MIN-41-WHT' },
-      { id: 'v-n1-3', size: '42', color: 'White', sku: 'MIN-42-WHT' },
-      { id: 'v-n1-4', size: '43', color: 'Cream', sku: 'MIN-43-CRM' },
+      { id: 'v-n1-1', size: '40', color: 'Trắng', sku: 'MIN-40-WHT' },
+      { id: 'v-n1-2', size: '41', color: 'Trắng', sku: 'MIN-41-WHT' },
+      { id: 'v-n1-3', size: '42', color: 'Trắng', sku: 'MIN-42-WHT' },
+      { id: 'v-n1-4', size: '43', color: 'Kem', sku: 'MIN-43-CRM' },
     ],
     stocks: [
-      { size: '40', color: 'White', available: 7, status: 'IN_STOCK' },
-      { size: '41', color: 'White', available: 4, status: 'IN_STOCK' },
-      { size: '42', color: 'White', available: 9, status: 'IN_STOCK' },
-      { size: '43', color: 'Cream', available: 2, status: 'IN_STOCK' },
+      { size: '40', color: 'Trắng', available: 7, status: 'IN_STOCK' },
+      { size: '41', color: 'Trắng', available: 4, status: 'IN_STOCK' },
+      { size: '42', color: 'Trắng', available: 9, status: 'IN_STOCK' },
+      { size: '43', color: 'Kem', available: 2, status: 'IN_STOCK' },
     ],
   },
   {
@@ -173,12 +173,12 @@ export const products = [
     name: 'Velocity Knit',
     brand: 'Nike',
     description:
-      'Upper knit ôm chân, đế carbon plate nhẹ. Dành cho runner thích tốc độ.',
+      'Thân knit ôm chân, đế nhẹ. Dành cho người thích chạy nhanh.',
     categoryId: 'cat-running',
-    categoryName: 'Running',
+    categoryName: 'Chạy bộ',
     basePrice: 4680000,
     status: 'ACTIVE',
-    collection: 'Performance Line',
+    collection: 'Dòng hiệu năng',
     images: [
       {
         id: 'img-n2-1',
@@ -194,16 +194,16 @@ export const products = [
       },
     ],
     variants: [
-      { id: 'v-n2-1', size: '41', color: 'Blue', sku: 'VEL-41-BLU' },
-      { id: 'v-n2-2', size: '42', color: 'Blue', sku: 'VEL-42-BLU' },
-      { id: 'v-n2-3', size: '43', color: 'Blue', sku: 'VEL-43-BLU' },
-      { id: 'v-n2-4', size: '42', color: 'Orange', sku: 'VEL-42-ORG' },
+      { id: 'v-n2-1', size: '41', color: 'Xanh', sku: 'VEL-41-BLU' },
+      { id: 'v-n2-2', size: '42', color: 'Xanh', sku: 'VEL-42-BLU' },
+      { id: 'v-n2-3', size: '43', color: 'Xanh', sku: 'VEL-43-BLU' },
+      { id: 'v-n2-4', size: '42', color: 'Cam', sku: 'VEL-42-ORG' },
     ],
     stocks: [
-      { size: '41', color: 'Blue', available: 3, status: 'IN_STOCK' },
-      { size: '42', color: 'Blue', available: 5, status: 'IN_STOCK' },
-      { size: '43', color: 'Blue', available: 0, status: 'OUT_OF_STOCK' },
-      { size: '42', color: 'Orange', available: 6, status: 'IN_STOCK' },
+      { size: '41', color: 'Xanh', available: 3, status: 'IN_STOCK' },
+      { size: '42', color: 'Xanh', available: 5, status: 'IN_STOCK' },
+      { size: '43', color: 'Xanh', available: 0, status: 'OUT_OF_STOCK' },
+      { size: '42', color: 'Cam', available: 6, status: 'IN_STOCK' },
     ],
   },
   {
@@ -211,13 +211,13 @@ export const products = [
     name: 'Chrome Runner',
     brand: 'New Balance',
     description:
-      'Metallic finish phản quang nhẹ. Drop giới hạn — hiện đang sold out hầu hết size.',
+      'Hoàn thiện kim loại phản quang nhẹ. Phiên bản giới hạn — hầu hết size đã hết.',
     categoryId: 'cat-sneakers',
-    categoryName: 'Sneakers',
+    categoryName: 'Sneaker',
     basePrice: 5200000,
     status: 'ACTIVE',
     soldOut: true,
-    collection: 'Metal Series',
+    collection: 'Dòng Metal',
     images: [
       {
         id: 'img-n3-1',
@@ -233,14 +233,14 @@ export const products = [
       },
     ],
     variants: [
-      { id: 'v-n3-1', size: '41', color: 'Chrome', sku: 'CRM-41-CHR' },
-      { id: 'v-n3-2', size: '42', color: 'Chrome', sku: 'CRM-42-CHR' },
-      { id: 'v-n3-3', size: '43', color: 'Chrome', sku: 'CRM-43-CHR' },
+      { id: 'v-n3-1', size: '41', color: 'Bạc', sku: 'CRM-41-CHR' },
+      { id: 'v-n3-2', size: '42', color: 'Bạc', sku: 'CRM-42-CHR' },
+      { id: 'v-n3-3', size: '43', color: 'Bạc', sku: 'CRM-43-CHR' },
     ],
     stocks: [
-      { size: '41', color: 'Chrome', available: 0, status: 'OUT_OF_STOCK' },
-      { size: '42', color: 'Chrome', available: 0, status: 'OUT_OF_STOCK' },
-      { size: '43', color: 'Chrome', available: 0, status: 'OUT_OF_STOCK' },
+      { size: '41', color: 'Bạc', available: 0, status: 'OUT_OF_STOCK' },
+      { size: '42', color: 'Bạc', available: 0, status: 'OUT_OF_STOCK' },
+      { size: '43', color: 'Bạc', available: 0, status: 'OUT_OF_STOCK' },
     ],
   },
   {
@@ -248,12 +248,12 @@ export const products = [
     name: 'Trail Blazer X',
     brand: 'Adidas',
     description:
-      'Outsole grip đa địa hình, upper chống nước nhẹ. Sẵn sàng weekend trail.',
+      'Đế bám đa địa hình, thân chống nước nhẹ. Sẵn sàng cho cuối tuần ngoài trời.',
     categoryId: 'cat-outdoor',
-    categoryName: 'Outdoor',
+    categoryName: 'Ngoài trời',
     basePrice: 4550000,
     status: 'ACTIVE',
-    collection: 'Outdoor Edition',
+    collection: 'Phiên bản ngoài trời',
     images: [
       {
         id: 'img-n4-1',
@@ -269,16 +269,16 @@ export const products = [
       },
     ],
     variants: [
-      { id: 'v-n4-1', size: '40', color: 'Olive', sku: 'TRL-40-OLV' },
-      { id: 'v-n4-2', size: '41', color: 'Olive', sku: 'TRL-41-OLV' },
-      { id: 'v-n4-3', size: '42', color: 'Olive', sku: 'TRL-42-OLV' },
-      { id: 'v-n4-4', size: '43', color: 'Brown', sku: 'TRL-43-BRN' },
+      { id: 'v-n4-1', size: '40', color: 'Xanh quân đội', sku: 'TRL-40-OLV' },
+      { id: 'v-n4-2', size: '41', color: 'Xanh quân đội', sku: 'TRL-41-OLV' },
+      { id: 'v-n4-3', size: '42', color: 'Xanh quân đội', sku: 'TRL-42-OLV' },
+      { id: 'v-n4-4', size: '43', color: 'Nâu', sku: 'TRL-43-BRN' },
     ],
     stocks: [
-      { size: '40', color: 'Olive', available: 4, status: 'IN_STOCK' },
-      { size: '41', color: 'Olive', available: 8, status: 'IN_STOCK' },
-      { size: '42', color: 'Olive', available: 1, status: 'IN_STOCK' },
-      { size: '43', color: 'Brown', available: 3, status: 'IN_STOCK' },
+      { size: '40', color: 'Xanh quân đội', available: 4, status: 'IN_STOCK' },
+      { size: '41', color: 'Xanh quân đội', available: 8, status: 'IN_STOCK' },
+      { size: '42', color: 'Xanh quân đội', available: 1, status: 'IN_STOCK' },
+      { size: '43', color: 'Nâu', available: 3, status: 'IN_STOCK' },
     ],
   },
   {
@@ -286,12 +286,12 @@ export const products = [
     name: 'Nike Air Force 1',
     brand: 'Nike',
     description:
-      'Classic low-top — seed mẫu khớp catalog backend. Da bền, đế Air êm.',
+      'Form thấp kinh điển — mẫu seed khớp catalog backend. Da bền, đế êm.',
     categoryId: 'cat-sneakers',
-    categoryName: 'Sneakers',
+    categoryName: 'Sneaker',
     basePrice: 2500000,
     status: 'ACTIVE',
-    collection: 'Icon Classics',
+    collection: 'Biểu tượng cổ điển',
     images: [
       {
         id: 'img-af1-1',
@@ -307,14 +307,14 @@ export const products = [
       },
     ],
     variants: [
-      { id: 'v-af1-1', size: '42', color: 'Black', sku: 'AF1-42-BLK' },
-      { id: 'v-af1-2', size: '43', color: 'Black', sku: 'AF1-43-BLK' },
-      { id: 'v-af1-3', size: '42', color: 'White', sku: 'AF1-42-WHT' },
+      { id: 'v-af1-1', size: '42', color: 'Đen', sku: 'AF1-42-BLK' },
+      { id: 'v-af1-2', size: '43', color: 'Đen', sku: 'AF1-43-BLK' },
+      { id: 'v-af1-3', size: '42', color: 'Trắng', sku: 'AF1-42-WHT' },
     ],
     stocks: [
-      { size: '42', color: 'Black', available: 10, status: 'IN_STOCK' },
-      { size: '43', color: 'Black', available: 5, status: 'IN_STOCK' },
-      { size: '42', color: 'White', available: 7, status: 'IN_STOCK' },
+      { size: '42', color: 'Đen', available: 10, status: 'IN_STOCK' },
+      { size: '43', color: 'Đen', available: 5, status: 'IN_STOCK' },
+      { size: '42', color: 'Trắng', available: 7, status: 'IN_STOCK' },
     ],
   },
   {
@@ -322,12 +322,12 @@ export const products = [
     name: 'Adidas Samba',
     brand: 'Adidas',
     description:
-      'Samba classic — gum sole, form bóng bàn huyền thoại. Màu mặc định không tách color.',
+      'Samba kinh điển — đế cao su, form bóng bàn huyền thoại. Không tách màu riêng.',
     categoryId: 'cat-sneakers',
-    categoryName: 'Sneakers',
+    categoryName: 'Sneaker',
     basePrice: 1800000,
     status: 'ACTIVE',
-    collection: 'Icon Classics',
+    collection: 'Biểu tượng cổ điển',
     images: [
       {
         id: 'img-smb-1',

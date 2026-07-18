@@ -1,77 +1,165 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import ProductCard from '../components/ProductCard'
+import { fetchProductById, fetchProducts } from '../api/products'
+import { fetchVariantStocks } from '../api/inventory'
 import {
+  findStock,
   formatVnd,
-  getProductById,
-  getStock,
-  products,
+  getMainImage,
+  normalizeColor,
+  PLACEHOLDER_IMAGE,
   uniqueColors,
   uniqueSizes,
-} from '../data/mockProducts'
-import ProductCard from '../components/ProductCard'
+} from '../utils/productUtils'
 
 export default function ProductDetailPage() {
   const { productId } = useParams()
-  const product = getProductById(productId)
+  const [product, setProduct] = useState(null)
+  const [stockVariants, setStockVariants] = useState([])
+  const [related, setRelated] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [notFound, setNotFound] = useState(false)
 
-  if (!product) {
+  useEffect(() => {
+    let cancelled = false
+
+    async function load() {
+      setLoading(true)
+      setError('')
+      setNotFound(false)
+      setProduct(null)
+      setStockVariants([])
+      setRelated([])
+
+      try {
+        const detail = await fetchProductById(productId)
+        if (cancelled) return
+        setProduct(detail)
+
+        const [stocksRes, allActive] = await Promise.all([
+          fetchVariantStocks(productId).catch(() => ({ variants: [] })),
+          fetchProducts({
+            status: 'ACTIVE',
+            categoryId: detail.categoryId,
+          }).catch(() => []),
+        ])
+
+        if (cancelled) return
+        setStockVariants(
+          Array.isArray(stocksRes?.variants) ? stocksRes.variants : [],
+        )
+        setRelated(
+          (Array.isArray(allActive) ? allActive : [])
+            .filter((p) => p.id !== detail.id)
+            .slice(0, 4),
+        )
+      } catch (err) {
+        if (cancelled) return
+        if (err?.status === 404) {
+          setNotFound(true)
+        } else {
+          setError(
+            err?.message ||
+              'Không tải được chi tiết sản phẩm. Kiểm tra Gateway và các service.',
+          )
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [productId])
+
+  if (loading) {
     return (
       <div className="sz-placeholder">
-        <h1>Product not found</h1>
+        <h1>Đang tải...</h1>
+        <p style={{ color: '#6b6b6b' }}>Đang lấy catalog và tồn kho.</p>
+      </div>
+    )
+  }
+
+  if (notFound) {
+    return (
+      <div className="sz-placeholder">
+        <h1>Không tìm thấy sản phẩm</h1>
         <p style={{ color: '#6b6b6b', marginBottom: '1.5rem' }}>
-          Không tìm thấy sản phẩm <code>{productId}</code> trong mock data.
+          Không có sản phẩm <code>{productId}</code> trên catalog.
         </p>
         <Link to="/products" className="sz-btn sz-btn-outline">
-          Back to Products
+          Về danh sách sản phẩm
         </Link>
       </div>
     )
   }
 
-  return <ProductDetailView product={product} />
+  if (error || !product) {
+    return (
+      <div className="sz-placeholder">
+        <h1>Lỗi tải sản phẩm</h1>
+        <p style={{ color: '#6b6b6b', marginBottom: '1.5rem' }}>{error}</p>
+        <Link to="/products" className="sz-btn sz-btn-outline">
+          Về danh sách sản phẩm
+        </Link>
+      </div>
+    )
+  }
+
+  return (
+    <ProductDetailView
+      product={product}
+      stockVariants={stockVariants}
+      related={related}
+    />
+  )
 }
 
-function ProductDetailView({ product }) {
+function ProductDetailView({ product, stockVariants, related }) {
   const sizes = useMemo(() => uniqueSizes(product), [product])
   const colors = useMemo(() => uniqueColors(product), [product])
   const hasColors = colors.length > 0
 
-  const [activeImage, setActiveImage] = useState(
-    product.images.find((i) => i.main)?.imageUrl || product.images[0]?.imageUrl,
-  )
+  const [activeImage, setActiveImage] = useState(getMainImage(product))
   const [size, setSize] = useState(sizes[0] || '')
   const [color, setColor] = useState(hasColors ? colors[0] : null)
   const [toast, setToast] = useState('')
 
   useEffect(() => {
-    setActiveImage(
-      product.images.find((i) => i.main)?.imageUrl || product.images[0]?.imageUrl,
-    )
-    setSize(uniqueSizes(product)[0] || '')
+    setActiveImage(getMainImage(product))
+    const nextSizes = uniqueSizes(product)
     const nextColors = uniqueColors(product)
+    setSize(nextSizes[0] || '')
     setColor(nextColors.length ? nextColors[0] : null)
     setToast('')
   }, [product])
 
-  const stock = getStock(product, size, color)
-  const available = stock?.available ?? 0
-  const inStock = available > 0
-
-  const related = products
-    .filter((p) => p.id !== product.id && p.categoryId === product.categoryId)
-    .slice(0, 4)
+  const stock = findStock(stockVariants, size, color)
+  const available = stock?.availableQuantity ?? 0
+  const inStock = Boolean(stock?.inStock) || available > 0
 
   const showComingSoon = (action) => {
-    setToast(`${action} — Coming soon (chưa nối cart/order)`)
+    setToast(`${action} — Sắp ra mắt (chưa nối giỏ hàng/đơn hàng)`)
     window.setTimeout(() => setToast(''), 2800)
   }
 
+  const selectedSku =
+    product.variants?.find(
+      (v) =>
+        v.size === size && normalizeColor(v.color) === normalizeColor(color),
+    )?.sku || '—'
+
   return (
     <div className="sz-detail">
-      <nav className="sz-breadcrumb" aria-label="Breadcrumb">
-        <Link to="/">Home</Link>
+      <nav className="sz-breadcrumb" aria-label="Đường dẫn">
+        <Link to="/">Trang chủ</Link>
         <span>/</span>
-        <Link to="/products">Products</Link>
+        <Link to="/products">Sản phẩm</Link>
         <span>/</span>
         <span>{product.name}</span>
       </nav>
@@ -79,27 +167,35 @@ function ProductDetailView({ product }) {
       <div className="sz-detail-grid">
         <div className="sz-gallery">
           <div className="sz-gallery-main">
-            {product.soldOut || !inStock ? (
-              <span className="sz-badge sz-badge-dark">
-                {product.soldOut ? 'Sold Out' : 'Out of Stock'}
-              </span>
-            ) : product.badge ? (
-              <span className="sz-badge">{product.badge}</span>
+            {!inStock ? (
+              <span className="sz-badge sz-badge-dark">Hết hàng</span>
             ) : null}
-            <img src={activeImage} alt={product.name} />
+            <img
+              src={activeImage}
+              alt={product.name}
+              onError={(e) => {
+                e.currentTarget.src = PLACEHOLDER_IMAGE
+              }}
+            />
           </div>
-          {product.images.length > 1 ? (
+          {product.images?.length > 1 ? (
             <div className="sz-gallery-thumbs">
-              {product.images.map((img) => (
-                <button
-                  key={img.id}
-                  type="button"
-                  className={`sz-thumb ${activeImage === img.imageUrl ? 'is-active' : ''}`}
-                  onClick={() => setActiveImage(img.imageUrl)}
-                >
-                  <img src={img.imageUrl} alt="" />
-                </button>
-              ))}
+              {product.images.map((img) => {
+                const url =
+                  !img.imageUrl || img.imageUrl.includes('example.com')
+                    ? PLACEHOLDER_IMAGE
+                    : img.imageUrl
+                return (
+                  <button
+                    key={img.id}
+                    type="button"
+                    className={`sz-thumb ${activeImage === url ? 'is-active' : ''}`}
+                    onClick={() => setActiveImage(url)}
+                  >
+                    <img src={url} alt="" />
+                  </button>
+                )
+              })}
             </div>
           ) : null}
         </div>
@@ -108,12 +204,14 @@ function ProductDetailView({ product }) {
           <p className="sz-detail-brand">{product.brand}</p>
           <h1>{product.name}</h1>
           <p className="sz-detail-price">{formatVnd(product.basePrice)}</p>
-          <p className="sz-detail-desc">{product.description}</p>
+          <p className="sz-detail-desc">
+            {product.description || 'Chưa có mô tả.'}
+          </p>
 
           {hasColors ? (
             <div className="sz-option-block">
               <div className="sz-option-label">
-                Color <span>{color}</span>
+                Màu <span>{color}</span>
               </div>
               <div className="sz-option-row">
                 {colors.map((c) => (
@@ -132,12 +230,14 @@ function ProductDetailView({ product }) {
 
           <div className="sz-option-block">
             <div className="sz-option-label">
-              Size <span>{size || '—'}</span>
+              Cỡ <span>{size || '—'}</span>
             </div>
             <div className="sz-option-row">
               {sizes.map((s) => {
-                const st = getStock(product, s, color)
-                const disabled = !st || st.available <= 0
+                const st = findStock(stockVariants, s, color)
+                const disabled = stockVariants.length
+                  ? !(st?.inStock || (st?.availableQuantity ?? 0) > 0)
+                  : false
                 return (
                   <button
                     key={s}
@@ -154,9 +254,11 @@ function ProductDetailView({ product }) {
           </div>
 
           <p className={`sz-stock ${inStock ? 'is-ok' : 'is-out'}`}>
-            {inStock
-              ? `Còn ${available} đôi · ${stock?.status || 'IN_STOCK'}`
-              : 'Hết hàng cho size/màu này'}
+            {stockVariants.length === 0
+              ? 'Chưa có dữ liệu tồn kho (inventory)'
+              : inStock
+                ? `Còn ${available} đôi`
+                : 'Hết hàng cho size/màu này'}
           </p>
 
           <div className="sz-detail-actions">
@@ -164,17 +266,17 @@ function ProductDetailView({ product }) {
               type="button"
               className="sz-btn"
               disabled={!inStock}
-              onClick={() => showComingSoon('Add to cart')}
+              onClick={() => showComingSoon('Thêm vào giỏ')}
             >
-              Add to Cart
+              Thêm vào giỏ
             </button>
             <button
               type="button"
               className="sz-btn sz-btn-outline"
               disabled={!inStock}
-              onClick={() => showComingSoon('Buy now')}
+              onClick={() => showComingSoon('Mua ngay')}
             >
-              Buy Now
+              Mua ngay
             </button>
           </div>
 
@@ -182,25 +284,24 @@ function ProductDetailView({ product }) {
 
           <dl className="sz-meta">
             <div>
-              <dt>Category</dt>
+              <dt>Danh mục</dt>
               <dd>
-                <Link to={`/products?categoryId=${product.categoryId}`}>
-                  {product.categoryName}
-                </Link>
+                {product.categoryId ? (
+                  <Link to={`/products?categoryId=${product.categoryId}`}>
+                    {product.categoryName || '—'}
+                  </Link>
+                ) : (
+                  product.categoryName || '—'
+                )}
               </dd>
             </div>
             <div>
-              <dt>Collection</dt>
-              <dd>{product.collection || '—'}</dd>
+              <dt>Thương hiệu</dt>
+              <dd>{product.brand || '—'}</dd>
             </div>
             <div>
-              <dt>SKU (selected)</dt>
-              <dd>
-                {product.variants.find(
-                  (v) =>
-                    v.size === size && (v.color ?? null) === (color ?? null),
-                )?.sku || '—'}
-              </dd>
+              <dt>Mã SKU</dt>
+              <dd>{selectedSku}</dd>
             </div>
           </dl>
         </div>
@@ -209,9 +310,9 @@ function ProductDetailView({ product }) {
       {related.length > 0 ? (
         <section className="sz-related">
           <div className="sz-section-head">
-            <h2 className="sz-section-title">You may also like</h2>
+            <h2 className="sz-section-title">Có thể bạn cũng thích</h2>
             <Link to="/products" className="sz-link">
-              View All
+              Xem tất cả
             </Link>
           </div>
           <div className="sz-arrivals-grid">

@@ -3,12 +3,12 @@ import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { FiSearch, FiHeart, FiShoppingBag, FiUser, FiMenu, FiX } from 'react-icons/fi'
 
 const NAV_ITEMS = [
-  { label: 'Drops', to: '/' },
-  { label: 'Brands', to: '/products' },
-  { label: 'Men', to: '/products' },
-  { label: 'Women', to: '/products' },
-  { label: 'Kids', to: '/products' },
-  { label: 'Editorial', to: '/products' },
+  { label: 'Mới về', to: '/' },
+  { label: 'Thương hiệu', to: '/products' },
+  { label: 'Nam', to: '/products' },
+  { label: 'Nữ', to: '/products' },
+  { label: 'Trẻ em', to: '/products' },
+  { label: 'Bài viết', to: '/products' },
 ]
 
 export default function SiteHeader() {
@@ -32,7 +32,7 @@ export default function SiteHeader() {
         <button
           type="button"
           className="sz-icon-btn sz-menu-toggle"
-          aria-label="Toggle menu"
+          aria-label="Mở menu"
           onClick={() => setMenuOpen((v) => !v)}
         >
           {menuOpen ? <FiX /> : <FiMenu />}
@@ -59,19 +59,19 @@ export default function SiteHeader() {
             <FiSearch aria-hidden />
             <input
               type="search"
-              placeholder="Search..."
+              placeholder="Tìm kiếm..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              aria-label="Search products"
+              aria-label="Tìm sản phẩm"
             />
           </form>
-          <button type="button" className="sz-icon-btn" aria-label="Wishlist">
+          <button type="button" className="sz-icon-btn" aria-label="Yêu thích">
             <FiHeart />
           </button>
-          <button type="button" className="sz-icon-btn" aria-label="Cart">
+          <button type="button" className="sz-icon-btn" aria-label="Giỏ hàng">
             <FiShoppingBag />
           </button>
-          <Link to="/login" className="sz-icon-btn" aria-label="Account">
+          <Link to="/login" className="sz-icon-btn" aria-label="Tài khoản">
             <FiUser />
           </Link>
         </div>

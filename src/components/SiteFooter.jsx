@@ -7,24 +7,24 @@ export default function SiteFooter() {
         <div>
           <p className="sz-footer-brand">StepZone</p>
           <p className="sz-footer-desc">
-            Elevating streetwear through curated design and high-performance
-            aesthetics.
+            Nâng tầm streetwear bằng thiết kế chọn lọc và phong cách hiệu năng
+            cao.
           </p>
         </div>
         <div className="sz-footer-col">
-          <h4>Support</h4>
-          <Link to="/products">Contact</Link>
-          <Link to="/products">Shipping</Link>
-          <Link to="/products">Returns</Link>
+          <h4>Hỗ trợ</h4>
+          <Link to="/products">Liên hệ</Link>
+          <Link to="/products">Vận chuyển</Link>
+          <Link to="/products">Đổi trả</Link>
         </div>
         <div className="sz-footer-col">
-          <h4>Legal</h4>
-          <Link to="/products">Privacy Policy</Link>
-          <Link to="/products">Terms of Service</Link>
+          <h4>Pháp lý</h4>
+          <Link to="/products">Chính sách bảo mật</Link>
+          <Link to="/products">Điều khoản dịch vụ</Link>
         </div>
       </div>
       <div className="sz-footer-bottom">
-        © {new Date().getFullYear()} StepZone. All rights reserved.
+        © {new Date().getFullYear()} StepZone. Đã đăng ký bản quyền.
       </div>
     </footer>
   )

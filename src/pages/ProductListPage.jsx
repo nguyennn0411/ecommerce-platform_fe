@@ -1,11 +1,9 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
-import {
-  categories,
-  filterProducts,
-  getBrands,
-} from '../data/mockProducts'
+import { fetchCategories } from '../api/categories'
+import { fetchProducts } from '../api/products'
+import { getBrandsFromProducts } from '../utils/productUtils'
 
 export default function ProductListPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -13,11 +11,49 @@ export default function ProductListPage() {
   const categoryId = searchParams.get('categoryId') || ''
   const brand = searchParams.get('brand') || ''
 
-  const brands = useMemo(() => getBrands(), [])
-  const filtered = useMemo(
-    () => filterProducts({ q, categoryId, brand }),
-    [q, categoryId, brand],
-  )
+  const [categories, setCategories] = useState([])
+  const [products, setProducts] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [reloadKey, setReloadKey] = useState(0)
+
+  useEffect(() => {
+    let cancelled = false
+    const timer = window.setTimeout(async () => {
+      setLoading(true)
+      setError('')
+      try {
+        const [cats, list] = await Promise.all([
+          fetchCategories(),
+          fetchProducts({ q, categoryId, status: 'ACTIVE' }),
+        ])
+        if (cancelled) return
+        setCategories(Array.isArray(cats) ? cats : [])
+        setProducts(Array.isArray(list) ? list : [])
+      } catch (err) {
+        if (cancelled) return
+        setCategories([])
+        setProducts([])
+        setError(
+          err?.message ||
+            'Không tải được sản phẩm. Kiểm tra Gateway (:8080) và product-catalog.',
+        )
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }, q ? 300 : 0)
+
+    return () => {
+      cancelled = true
+      window.clearTimeout(timer)
+    }
+  }, [q, categoryId, reloadKey])
+
+  const brands = useMemo(() => getBrandsFromProducts(products), [products])
+  const filtered = useMemo(() => {
+    if (!brand) return products
+    return products.filter((p) => p.brand === brand)
+  }, [products, brand])
 
   const updateParam = (key, value) => {
     const next = new URLSearchParams(searchParams)
@@ -32,36 +68,36 @@ export default function ProductListPage() {
     <div className="sz-catalog">
       <div className="sz-catalog-hero">
         <p className="sz-hero-kicker" style={{ color: 'inherit', opacity: 0.55 }}>
-          StepZone Catalog
+          Danh mục StepZone
         </p>
-        <h1>All Products</h1>
+        <h1>Tất cả sản phẩm</h1>
         <p>
-          {filtered.length} silhouette{filtered.length === 1 ? '' : 's'}
-          {q ? ` matching “${q}”` : ''}
+          {loading ? 'Đang tải...' : `${filtered.length} sản phẩm`}
+          {q ? ` khớp với “${q}”` : ''}
         </p>
       </div>
 
       <div className="sz-catalog-layout">
-        <aside className="sz-filters" aria-label="Filters">
+        <aside className="sz-filters" aria-label="Bộ lọc">
           <div className="sz-filter-block">
-            <h2>Search</h2>
+            <h2>Tìm kiếm</h2>
             <input
               className="sz-filter-input"
               type="search"
-              placeholder="Name, brand..."
+              placeholder="Tên, thương hiệu..."
               value={q}
               onChange={(e) => updateParam('q', e.target.value)}
             />
           </div>
 
           <div className="sz-filter-block">
-            <h2>Category</h2>
+            <h2>Danh mục</h2>
             <button
               type="button"
               className={`sz-filter-chip ${!categoryId ? 'is-active' : ''}`}
               onClick={() => updateParam('categoryId', '')}
             >
-              All
+              Tất cả
             </button>
             {categories.map((cat) => (
               <button
@@ -76,13 +112,13 @@ export default function ProductListPage() {
           </div>
 
           <div className="sz-filter-block">
-            <h2>Brand</h2>
+            <h2>Thương hiệu</h2>
             <button
               type="button"
               className={`sz-filter-chip ${!brand ? 'is-active' : ''}`}
               onClick={() => updateParam('brand', '')}
             >
-              All
+              Tất cả
             </button>
             {brands.map((b) => (
               <button
@@ -97,19 +133,44 @@ export default function ProductListPage() {
           </div>
 
           {(q || categoryId || brand) && (
-            <button type="button" className="sz-link sz-clear-filters" onClick={clearFilters}>
-              Clear filters
+            <button
+              type="button"
+              className="sz-link sz-clear-filters"
+              onClick={clearFilters}
+            >
+              Xóa bộ lọc
             </button>
           )}
         </aside>
 
         <section className="sz-catalog-grid-wrap">
-          {filtered.length === 0 ? (
+          {loading ? (
             <div className="sz-empty">
-              <h2>No products found</h2>
+              <h2>Đang tải sản phẩm...</h2>
+              <p>Đang gọi API catalog qua Gateway.</p>
+            </div>
+          ) : error ? (
+            <div className="sz-empty">
+              <h2>Không kết nối được Backend</h2>
+              <p>{error}</p>
+              <button
+                type="button"
+                className="sz-btn sz-btn-outline"
+                onClick={() => setReloadKey((k) => k + 1)}
+              >
+                Thử lại
+              </button>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="sz-empty">
+              <h2>Không tìm thấy sản phẩm</h2>
               <p>Thử đổi từ khóa hoặc bỏ bộ lọc.</p>
-              <button type="button" className="sz-btn sz-btn-outline" onClick={clearFilters}>
-                Reset
+              <button
+                type="button"
+                className="sz-btn sz-btn-outline"
+                onClick={clearFilters}
+              >
+                Đặt lại
               </button>
             </div>
           ) : (
@@ -121,8 +182,7 @@ export default function ProductListPage() {
           )}
 
           <div className="sz-catalog-note">
-            <Link to="/">← Back to Home</Link>
-            <span>Mock data — chưa nối API</span>
+            <Link to="/">← Về trang chủ</Link>
           </div>
         </section>
       </div>
