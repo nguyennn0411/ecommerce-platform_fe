@@ -8,6 +8,7 @@ const keycloakConfig = {
 
 const keycloak = new Keycloak(keycloakConfig);
 
+<<<<<<< HEAD
 export const initAuthentication = (onAuthenticatedCallback) => {
   keycloak.init({
     onLoad: 'check-sso',
@@ -27,4 +28,6 @@ export const initAuthentication = (onAuthenticatedCallback) => {
   })
 }
 
+=======
+>>>>>>> origin/main
 export default keycloak;
