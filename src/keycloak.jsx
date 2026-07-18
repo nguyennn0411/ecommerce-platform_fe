@@ -15,14 +15,16 @@ export const initAuthentication = (onAuthenticatedCallback) => {
   })
   .then((authenticated) => {
     if (authenticated) {
-      console.log("User Authenticated successfully!");
-      console.log("JWT Access Token: ", keycloak.token); 
+      console.log('User Authenticated successfully!')
+      console.log('JWT Access Token: ', keycloak.token)
     }
-    onAuthenticatedCallback(authenticated);
+    onAuthenticatedCallback(authenticated)
   })
   .catch((err) => {
-    console.error("Authentication initialization failed", err);
-  });
-};
+    console.error('Authentication initialization failed', err)
+    // Vẫn render FE khi Keycloak chưa chạy (dev / mock UI)
+    onAuthenticatedCallback(false)
+  })
+}
 
 export default keycloak;
