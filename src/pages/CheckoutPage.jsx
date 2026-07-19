@@ -23,14 +23,14 @@ const initialForm = {
   firstName: 'Hong',
   lastName: 'Phuc',
   email: 'phuc@example.com',
-  address1: '',
+  address1: '123 Đường Lê Lợi',
   address2: '',
   provinceCode: '',
   provinceName: '',
   wardCode: '',
   wardName: '',
-  zipCode: '',
-  phone: '',
+  zipCode: '700000',
+  phone: '0900000000',
   shippingMethod: 'standard',
 };
 
@@ -111,6 +111,19 @@ function VietnamAdministrativeFields({ form, setForm }) {
   }, []);
 
   useEffect(() => {
+    if (loadingProvinces || form.provinceCode || provinces.length === 0) {
+      return;
+    }
+
+    const demoProvince = provinces[0];
+    setForm((current) => ({
+      ...current,
+      provinceCode: String(demoProvince.code),
+      provinceName: demoProvince.name,
+    }));
+  }, [form.provinceCode, loadingProvinces, provinces, setForm]);
+
+  useEffect(() => {
     if (!form.provinceCode) {
       setWards([]);
       return undefined;
@@ -124,6 +137,19 @@ function VietnamAdministrativeFields({ form, setForm }) {
       .finally(() => { if (active) setLoadingWards(false); });
     return () => { active = false; };
   }, [form.provinceCode]);
+
+  useEffect(() => {
+    if (loadingWards || form.wardCode || wards.length === 0) {
+      return;
+    }
+
+    const demoWard = wards[0];
+    setForm((current) => ({
+      ...current,
+      wardCode: String(demoWard.code),
+      wardName: demoWard.name,
+    }));
+  }, [form.wardCode, loadingWards, setForm, wards]);
 
   function selectProvince(event) {
     const province = provinces.find((item) => String(item.code) === event.target.value);
