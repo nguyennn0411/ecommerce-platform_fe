@@ -1084,9 +1084,26 @@ button {
   flex-direction: column;
   justify-content: center;
   min-height: 100vh;
-  padding: 2rem;
+  padding: 3rem 2rem;
   text-align: center;
 }
+
+.payment-result__icon {
+  align-items: center;
+  background: #e9effb;
+  border: 1px solid #cbd8ef;
+  border-radius: 50%;
+  color: #1d4ed8;
+  display: flex;
+  height: 4.5rem;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+  width: 4.5rem;
+}
+
+.payment-result__icon svg { height: 2rem; width: 2rem; }
+.payment-result__icon.is-confirmed { background: #e0f7e8; border-color: #a9dfba; color: #087340; }
+.payment-result__icon.is-failed { background: #ffeaeb; border-color: #f1b2b8; color: #b4232d; }
 
 .payment-result h1 {
   font-size: clamp(2rem, 5vw, 4rem);
@@ -1110,6 +1127,29 @@ button {
   text-align: left;
   width: 100%;
 }
+
+.payment-result__progress {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  margin: 1.15rem 0 0.25rem;
+}
+
+.payment-result__progress span {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid #dbe3ed;
+  color: #64748b;
+  display: inline-flex;
+  font-size: 0.72rem;
+  font-weight: 700;
+  gap: 0.35rem;
+  padding: 0.5rem 0.65rem;
+}
+
+.payment-result__progress .is-current { border-color: #80a9ef; color: #1d4ed8; }
+.payment-result__progress .is-done { background: #e9f9ee; border-color: #b6e3c3; color: #087340; }
 
 .payment-result__details div {
   display: grid;
@@ -1136,6 +1176,10 @@ button {
   padding: 0.8rem 1.2rem;
   text-decoration: none;
 }
+
+.payment-result__actions { display: flex; flex-wrap: wrap; gap: 0.65rem; justify-content: center; }
+.payment-result__link--secondary { background: transparent; border: 1px solid #111827; color: #111827; }
+.payment-result__link--secondary:hover { background: #e8edf5; }
 
 .orders-page {
   margin: 0 auto;
@@ -1222,6 +1266,7 @@ button {
   font-size: 0.8rem;
   padding: 0.6rem 0.85rem;
 }
+.orders-tabs button:hover, .orders-reload:hover { border-color: var(--sz-black); color: var(--sz-black); }
 .orders-tabs button.is-active { background: var(--sz-black); border-color: var(--sz-black); color: #fff; }
 .orders-reload { align-items: center; display: inline-flex; gap: 0.4rem; white-space: nowrap; }
 .orders-reload:disabled { cursor: wait; opacity: 0.6; }
@@ -1239,7 +1284,8 @@ button {
 .orders-empty a, .order-card__footer a { align-items: center; color: var(--sz-black); display: inline-flex; font-size: 0.8rem; font-weight: 800; gap: 0.45rem; margin-top: 1.15rem; text-decoration: none; }
 
 .orders-list { display: grid; gap: 1rem; margin-top: 1.75rem; }
-.order-card { border: 1px solid var(--sz-border); background: #fff; }
+.order-card { background: #fff; border: 1px solid var(--sz-border); box-shadow: 0 0 0 rgba(0, 0, 0, 0); transition: box-shadow 0.2s ease, transform 0.2s ease; }
+.order-card:hover { box-shadow: 0 12px 28px rgba(10, 10, 10, 0.08); transform: translateY(-2px); }
 .order-card__top { align-items: start; border-bottom: 1px solid var(--sz-border); display: flex; justify-content: space-between; padding: 1.25rem 1.4rem; }
 .order-card__top p { color: var(--sz-muted); font-size: 0.7rem; font-weight: 800; letter-spacing: 0.1em; margin: 0; text-transform: uppercase; }
 .order-card__top h2 { font-size: 1rem; letter-spacing: 0.04em; margin: 0.35rem 0; }
@@ -1262,8 +1308,12 @@ button {
 .order-card__footer small { color: var(--sz-muted); display: block; font-size: 0.66rem; text-transform: uppercase; }
 .order-card__footer strong { display: block; font-size: 1rem; margin-top: 0.2rem; }
 .order-card__footer a { border: 1px solid var(--sz-black); margin: 0; padding: 0.6rem 0.75rem; }
+.order-card__footer a:hover { background: var(--sz-black); color: #fff; }
 
 @media (max-width: 640px) {
+  .payment-result { padding: 2rem 1rem; }
+  .payment-result__progress { align-items: stretch; flex-direction: column; width: 100%; }
+  .payment-result__progress span { justify-content: center; }
   .orders-page { padding: 1.5rem 1rem 3rem; }
   .orders-hero { align-items: start; flex-direction: column; gap: 1.5rem; }
   .orders-toolbar, .order-card__footer { align-items: stretch; flex-direction: column; }
