@@ -1,13 +1,19 @@
 import { useEffect, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 const ORDER_API_BASE = '/api/v1/orders'
 
 export default function PaymentSuccessPage() {
+  const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [order, setOrder] = useState(null)
   const [error, setError] = useState('')
   const orderId = searchParams.get('orderId') || window.sessionStorage.getItem('stepzone-last-order-id')
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => navigate('/orders', { replace: true }), 700)
+    return () => window.clearTimeout(timer)
+  }, [navigate])
 
   useEffect(() => {
     if (!orderId) return undefined
