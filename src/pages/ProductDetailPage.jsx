@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
 import { fetchProductById, fetchProducts } from '../api/products'
 import { fetchVariantStocks } from '../api/inventory'
@@ -12,6 +12,7 @@ import {
   uniqueColors,
   uniqueSizes,
 } from '../utils/productUtils'
+import { useCart } from '../cart/CartContext.jsx'
 
 export default function ProductDetailPage() {
   const { productId } = useParams()
@@ -121,6 +122,8 @@ export default function ProductDetailPage() {
 }
 
 function ProductDetailView({ product, stockVariants, related }) {
+  const navigate = useNavigate()
+  const { addItem } = useCart()
   const sizes = useMemo(() => uniqueSizes(product), [product])
   const colors = useMemo(() => uniqueColors(product), [product])
   const hasColors = colors.length > 0
@@ -143,8 +146,22 @@ function ProductDetailView({ product, stockVariants, related }) {
   const available = stock?.availableQuantity ?? 0
   const inStock = Boolean(stock?.inStock) || available > 0
 
-  const showComingSoon = (action) => {
-    setToast(`${action} — Sắp ra mắt (chưa nối giỏ hàng/đơn hàng)`)
+  function addSelectedItem(goToCheckout) {
+    addItem(
+      {
+        id: product.id,
+        name: product.name,
+        size,
+        color: color || '',
+        unitPrice: Number(product.basePrice),
+        image: activeImage,
+      },
+      available,
+    )
+    setToast(goToCheckout ? 'Đã thêm sản phẩm, chuyển tới thanh toán.' : 'Đã thêm vào giỏ hàng.')
+    if (goToCheckout) {
+      navigate('/checkout')
+    }
     window.setTimeout(() => setToast(''), 2800)
   }
 
@@ -266,7 +283,7 @@ function ProductDetailView({ product, stockVariants, related }) {
               type="button"
               className="sz-btn"
               disabled={!inStock}
-              onClick={() => showComingSoon('Thêm vào giỏ')}
+              onClick={() => addSelectedItem(false)}
             >
               Thêm vào giỏ
             </button>
@@ -274,7 +291,7 @@ function ProductDetailView({ product, stockVariants, related }) {
               type="button"
               className="sz-btn sz-btn-outline"
               disabled={!inStock}
-              onClick={() => showComingSoon('Mua ngay')}
+              onClick={() => addSelectedItem(true)}
             >
               Mua ngay
             </button>

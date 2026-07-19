@@ -1,15 +1,16 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.jsx'
-import { initAuthentication } from './keycloak.jsx'
+import ReactDOM from 'react-dom/client';
+import React from 'react';
+import App from './App.jsx';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import './index.css';
+import { initAuthentication } from './keycloak.jsx';
 
-const root = createRoot(document.getElementById('root'))
+const root = ReactDOM.createRoot(document.getElementById('root'));
 
-initAuthentication(() => {
+initAuthentication((authProfile) => {
   root.render(
-    <StrictMode>
-      <App />
-    </StrictMode>,
-  )
-})
+    <React.StrictMode>
+      <App initialAuth={authProfile} />
+    </React.StrictMode>
+  );
+});
