@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { FiSearch, FiHeart, FiShoppingBag, FiUser, FiMenu, FiX } from 'react-icons/fi'
+import { useCart } from '../cart/CartContext.jsx'
 
 const NAV_ITEMS = [
   { label: 'Mới về', to: '/' },
@@ -15,6 +16,8 @@ export default function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [query, setQuery] = useState('')
   const navigate = useNavigate()
+  const { items } = useCart()
+  const cartCount = items.reduce((sum, item) => sum + Number(item.quantity || 0), 0)
 
   const onSearch = (e) => {
     e.preventDefault()
@@ -68,10 +71,11 @@ export default function SiteHeader() {
           <button type="button" className="sz-icon-btn" aria-label="Yêu thích">
             <FiHeart />
           </button>
-          <button type="button" className="sz-icon-btn" aria-label="Giỏ hàng">
+          <Link to="/checkout" className="sz-icon-btn" aria-label={`Giỏ hàng (${cartCount})`}>
             <FiShoppingBag />
-          </button>
-          <Link to="/login" className="sz-icon-btn" aria-label="Tài khoản">
+            {cartCount ? <span className="sz-cart-count">{cartCount}</span> : null}
+          </Link>
+          <Link to="/orders" className="sz-icon-btn" aria-label="Tài khoản và đơn hàng">
             <FiUser />
           </Link>
         </div>
