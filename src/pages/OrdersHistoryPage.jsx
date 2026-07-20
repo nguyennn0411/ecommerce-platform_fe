@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
-import { FiArrowRight, FiBox, FiCheckCircle, FiClock, FiCreditCard, FiRefreshCw, FiXCircle } from 'react-icons/fi'
+import { FiArrowRight, FiBox, FiCheckCircle, FiClock, FiCreditCard, FiLogOut, FiRefreshCw, FiXCircle } from 'react-icons/fi'
 import { Link } from 'react-router-dom'
+import { fetchProductById } from '../api/products'
+import { getMainImage } from '../utils/productUtils'
 
 const ORDER_API_BASE = '/api/v1/orders'
 
@@ -42,8 +44,9 @@ function getStatusMeta(status) {
   return STATUS_META[status] || { label: status || 'Đang xử lý', tone: 'pending', icon: FiClock }
 }
 
-export default function OrdersHistoryPage({ auth }) {
+export default function OrdersHistoryPage({ auth, onLogout }) {
   const [orders, setOrders] = useState([])
+  const [productImages, setProductImages] = useState({})
   const [filter, setFilter] = useState('ALL')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -57,7 +60,22 @@ export default function OrdersHistoryPage({ auth }) {
       if (!response.ok || !body?.success) {
         throw new Error(body?.message || 'Không tải được danh sách đơn hàng.')
       }
-      setOrders(Array.isArray(body.data) ? body.data : [])
+      const orderData = Array.isArray(body.data) ? body.data : []
+      setOrders(orderData)
+
+      const productIds = [...new Set(orderData.flatMap((order) => (
+        (order.items || []).map((item) => item.productId).filter(Boolean)
+      )))]
+      const products = await Promise.all(productIds.map(async (productId) => {
+        try {
+          return [productId, await fetchProductById(productId)]
+        } catch {
+          return [productId, null]
+        }
+      }))
+      setProductImages(Object.fromEntries(products
+        .filter(([, product]) => product)
+        .map(([productId, product]) => [productId, getMainImage(product)])))
     } catch (requestError) {
       setError(requestError.message || 'Không thể kết nối Order Service.')
       setOrders([])
@@ -106,10 +124,16 @@ export default function OrdersHistoryPage({ auth }) {
             </button>
           ))}
         </div>
-        <button type="button" className="orders-reload" onClick={loadOrders} disabled={loading}>
-          <FiRefreshCw className={loading ? 'spin' : ''} />
-          Làm mới
-        </button>
+        <div className="orders-toolbar__actions">
+          <button type="button" className="orders-reload" onClick={loadOrders} disabled={loading}>
+            <FiRefreshCw className={loading ? 'spin' : ''} />
+            Làm mới
+          </button>
+          <button type="button" className="orders-logout" onClick={onLogout}>
+            <FiLogOut />
+            Logout
+          </button>
+        </div>
       </div>
 
       {loading ? <div className="orders-state">Đang tải lịch sử đơn hàng...</div> : null}
@@ -138,15 +162,21 @@ export default function OrdersHistoryPage({ auth }) {
                     <h2>#{order.orderId?.slice(0, 8).toUpperCase()}</h2>
                     <small>{formatDate(order.createdAt)}</small>
                   </div>
-                  <span className={`order-status order-status--${meta.tone}`}>
-                    <StatusIcon aria-hidden /> {meta.label}
-                  </span>
+                  <div className="order-card__status">
+                    <span className={`order-status order-status--${meta.tone}`}>
+                      <StatusIcon aria-hidden /> {meta.label}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="order-card__items">
                   {(order.items || []).slice(0, 2).map((item) => (
                     <div className="order-item" key={item.id || `${item.productId}-${item.size}-${item.color}`}>
-                      <div className="order-item__thumbnail"><FiBox aria-hidden /></div>
+                      <div className="order-item__thumbnail">
+                        {productImages[item.productId]
+                          ? <img src={productImages[item.productId]} alt={item.productName || 'Sản phẩm'} />
+                          : <FiBox aria-hidden />}
+                      </div>
                       <div>
                         <h3>{item.productName || 'Sản phẩm StepZone'}</h3>
                         <p>{[item.color, item.size ? `Size ${item.size}` : ''].filter(Boolean).join(' · ') || 'Phiên bản tiêu chuẩn'}</p>
@@ -160,6 +190,9 @@ export default function OrdersHistoryPage({ auth }) {
 
                 <footer className="order-card__footer">
                   <span><FiCreditCard aria-hidden /> {totalItems} sản phẩm</span>
+                  {order.status === 'PAYMENT_PENDING' || order.status === 'PENDING' ? (
+                    <small className="order-card__footer-note">Thanh toán trong 1 phút trước khi hủy đơn</small>
+                  ) : null}
                   <div>
                     <small>Tổng thanh toán</small>
                     <strong>{formatVnd(order.totalAmount)}</strong>

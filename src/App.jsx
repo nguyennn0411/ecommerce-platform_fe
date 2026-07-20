@@ -25,7 +25,7 @@ function OrdersRoute({ auth }) {
     return <Navigate to="/login" replace />
   }
 
-  return <OrdersHistoryPage auth={auth} />
+  return <OrdersHistoryPage auth={auth} onLogout={logout} />
 }
 
 function OrderDetailRoute({ auth }) {

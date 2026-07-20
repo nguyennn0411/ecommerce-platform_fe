@@ -2,9 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import {
-  FiCheck,
   FiChevronDown,
-  FiLock,
   FiLogOut,
   FiPackage,
   FiUser,
@@ -13,7 +11,9 @@ import {
 } from 'react-icons/fi';
 import { useCart } from '../cart/CartContext.jsx';
 import { fetchProductById } from '../api/products';
+import { fetchVariantStocks } from '../api/inventory';
 import { fetchVietnamProvinces, fetchVietnamWards } from '../api/vietnamAdministrative.js';
+import { findStock } from '../utils/productUtils.js';
 import './CheckoutPage.css';
 
 const ORDER_API_URL = '/api/v1/orders';
@@ -36,14 +36,14 @@ const initialForm = {
 
 const shippingOptions = {
   standard: {
-    label: 'Standard Delivery',
-    description: '3-5 business days',
+    label: 'Giao hàng tiêu chuẩn',
+    description: '3-5 ngày làm việc',
     fee: 0,
   },
   express: {
-    label: 'Express Delivery',
-    description: '1-2 business days',
-    fee: 50000,
+    label: 'Giao hàng hỏa tốc',
+    description: '1-2 ngày làm việc',
+    fee: 5000,
   },
 };
 
@@ -198,27 +198,14 @@ function VietnamAdministrativeFields({ form, setForm }) {
   );
 }
 
-function ProgressSteps({ isSubmitted }) {
-  return (
-    <div className="checkout-progress" aria-label="Checkout progress">
-      {['Shipping', 'Payment', 'Review'].map((label, index) => (
-        <div className="checkout-progress__step" key={label}>
-          <span className={index === 0 || isSubmitted ? 'is-active' : ''}>{index + 1}</span>
-          <strong>{label}</strong>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function CheckoutHero({ activeItems, totalAmount, auth, onLogout }) {
   return (
     <section className="checkout-hero">
       <div className="checkout-hero__copy">
-        <p className="checkout-kicker">Secure checkout</p>
-        <h1>Complete your order.</h1>
+        <p className="checkout-kicker">Thanh toán an toàn</p>
+        <h1>Hoàn tất đơn hàng.</h1>
         <p className="checkout-hero__text">
-          Add your delivery details, choose a shipping method, then continue to payment.
+          Điền thông tin nhận hàng, chọn hình thức giao hàng rồi tiếp tục thanh toán.
         </p>
         <div className="checkout-userbar">
           <span>
@@ -228,17 +215,17 @@ function CheckoutHero({ activeItems, totalAmount, auth, onLogout }) {
           <small>{auth.email}</small>
           <button type="button" className="checkout-logout" onClick={onLogout}>
             <FiLogOut aria-hidden="true" />
-            Logout
+            Đăng xuất
           </button>
         </div>
       </div>
       <div className="checkout-hero__stats">
         <article>
-          <span>Active items</span>
+            <span>Sản phẩm đã chọn</span>
           <strong>{activeItems}</strong>
         </article>
         <article>
-          <span>Estimated charge</span>
+            <span>Tạm tính</span>
           <strong>{formatCurrency(totalAmount)}</strong>
         </article>
       </div>
@@ -252,12 +239,13 @@ function OrderSummary({
   onRemove,
   subtotal,
   shippingFee,
-  vatAmount,
   totalAmount,
+  stockByItemKey,
+  stockLoading,
 }) {
   return (
-    <aside className="order-summary" aria-label="Order summary">
-      <h2>Order Summary</h2>
+    <aside className="order-summary" aria-label="Tóm tắt đơn hàng">
+      <h2>Tóm tắt đơn hàng</h2>
       <div className="order-summary__items">
         {cartItems.length === 0 ? <p>Giỏ hàng đang trống. Hãy chọn sản phẩm rồi thêm vào giỏ.</p> : null}
         {cartItems.map((item) => (
@@ -268,17 +256,43 @@ function OrderSummary({
             <div>
               <h3>{item.name}</h3>
               <p>Size: {item.size}</p>
-              {item.color ? <p>Color: {item.color}</p> : null}
+              {item.color ? <p>Màu: {item.color}</p> : null}
               <div className="summary-edit-row">
-                <label className="summary-edit">
-                  <span>Qty</span>
-                  <input
-                    type="number"
-                    min="0"
-                    value={item.quantity}
-                    onChange={(event) => onQuantityChange(item.key, event.target.value)}
-                  />
-                </label>
+                <div className="summary-edit">
+                  <span>Số lượng</span>
+                  <div className="summary-quantity-control">
+                    <button
+                      type="button"
+                      onClick={() => onQuantityChange(item, Number(item.quantity) - 1)}
+                      disabled={Number(item.quantity) <= 1}
+                      aria-label={`Giảm số lượng ${item.name}`}
+                    >
+                      -
+                    </button>
+                    <input
+                      type="number"
+                      min="1"
+                      max={stockByItemKey[item.key]?.availableQuantity}
+                      value={item.quantity}
+                      onChange={(event) => onQuantityChange(item, event.target.value)}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => onQuantityChange(item, Number(item.quantity) + 1)}
+                      disabled={stockLoading || Number(item.quantity) >= Number(stockByItemKey[item.key]?.availableQuantity || 0)}
+                      aria-label={`Tăng số lượng ${item.name}`}
+                    >
+                      +
+                    </button>
+                  </div>
+                  <small>
+                    {stockLoading
+                      ? 'Đang kiểm tra tồn kho...'
+                      : stockByItemKey[item.key]
+                        ? `Còn ${stockByItemKey[item.key].availableQuantity} sản phẩm`
+                        : 'Không lấy được tồn kho'}
+                  </small>
+                </div>
                 <button type="button" className="checkout-logout" onClick={() => onRemove(item.key)}>
                   Xóa
                 </button>
@@ -289,39 +303,33 @@ function OrderSummary({
         ))}
       </div>
       <div className="summary-lines">
-        <span>Subtotal</span>
+        <span>Tạm tính</span>
         <strong>{formatCurrency(subtotal)}</strong>
-        <span>Shipping</span>
+        <span>Phí giao hàng</span>
         <strong>{formatCurrency(shippingFee)}</strong>
-        <span>VAT (10%)</span>
-        <strong>{formatCurrency(vatAmount)}</strong>
       </div>
       <div className="summary-total">
-        <span>Total</span>
+        <span>Tổng cộng</span>
         <strong>{formatCurrency(totalAmount)}</strong>
       </div>
     </aside>
   );
 }
 
-function PaymentSummary({ subtotal, shippingFee, vatAmount, totalAmount }) {
+function PaymentSummary({ subtotal, shippingFee, totalAmount }) {
   return (
-    <section className="payment-summary" aria-label="Payment summary">
-      <h2>Payment Summary</h2>
+    <section className="payment-summary" aria-label="Tóm tắt thanh toán">
+      <h2>Tóm tắt thanh toán</h2>
       <div>
-        <span>Subtotal</span>
+        <span>Tạm tính</span>
         <strong>{formatCurrency(subtotal)}</strong>
       </div>
       <div>
-        <span>Shipping</span>
+        <span>Phí giao hàng</span>
         <strong>{formatCurrency(shippingFee)}</strong>
       </div>
-      <div>
-        <span>VAT (10%)</span>
-        <strong>{formatCurrency(vatAmount)}</strong>
-      </div>
       <footer>
-        <span>Total</span>
+        <span>Tổng cộng</span>
         <strong>{formatCurrency(totalAmount)}</strong>
       </footer>
     </section>
@@ -329,44 +337,14 @@ function PaymentSummary({ subtotal, shippingFee, vatAmount, totalAmount }) {
 }
 
 function SubmissionCard({ submitState }) {
-  if (submitState.status === 'idle') return null;
-
-  if (submitState.status === 'submitting') {
-    return (
-      <section className="submission-card submission-card--loading">
-        <div className="submission-card__heading">
-          <h2>Creating your order</h2>
-        </div>
-        <p>Please wait while we prepare your payment.</p>
-      </section>
-    );
-  }
-
-  if (submitState.status === 'error') {
-    return (
-      <section className="submission-card submission-card--error">
-        <div className="submission-card__heading">
-          <h2>We couldn't place your order</h2>
-        </div>
-        <p>{submitState.message}</p>
-      </section>
-    );
-  }
-
-  const { order } = submitState;
+  if (submitState.status !== 'error') return null;
 
   return (
-    <section className="submission-card submission-card--success">
+    <section className="submission-card submission-card--error">
       <div className="submission-card__heading">
-        <FiCheck aria-hidden="true" />
-        <h2>Order placed</h2>
+        <h2>Không thể tạo đơn hàng</h2>
       </div>
-      <p>Your order is ready. Continue to payment to finish your purchase.</p>
-      {order.checkoutUrl ? (
-        <a className="checkout-link" href={order.checkoutUrl} target="_blank" rel="noreferrer">
-          Continue to payment
-        </a>
-      ) : null}
+      <p>{submitState.message}</p>
     </section>
   );
 }
@@ -380,6 +358,8 @@ function CheckoutPage({ auth, onLogout }) {
     message: '',
     order: null,
   });
+  const [stockByItemKey, setStockByItemKey] = useState({});
+  const [stockLoading, setStockLoading] = useState(false);
 
   const activeItems = useMemo(
     () => cartItems.filter((item) => Number(item.quantity) > 0),
@@ -396,8 +376,7 @@ function CheckoutPage({ auth, onLogout }) {
   );
 
   const shippingFee = shippingOptions[form.shippingMethod].fee;
-  const vatAmount = Math.round((subtotal + shippingFee) * 0.1);
-  const totalAmount = subtotal + shippingFee + vatAmount;
+  const totalAmount = subtotal + shippingFee;
   const activeItemCount = activeItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
 
   useEffect(() => {
@@ -418,6 +397,44 @@ function CheckoutPage({ auth, onLogout }) {
         (nameParts.length > 1 ? nameParts.slice(1).join(' ') : current.lastName),
     }));
   }, [auth]);
+
+  useEffect(() => {
+    let active = true;
+    const productIds = [...new Set(cartItems.map((item) => item.id).filter(Boolean))];
+
+    if (productIds.length === 0) {
+      setStockByItemKey({});
+      return undefined;
+    }
+
+    setStockLoading(true);
+    Promise.all(productIds.map(async (productId) => [productId, await fetchVariantStocks(productId)]))
+      .then((responses) => {
+        if (!active) return;
+        const variantsByProductId = new Map(
+          responses.map(([productId, response]) => [productId, response?.variants || []]),
+        );
+        const nextStocks = Object.fromEntries(cartItems.map((item) => {
+          const stock = findStock(variantsByProductId.get(item.id), item.size, item.color);
+          return [item.key, stock ? { availableQuantity: Number(stock.availableQuantity || 0) } : null];
+        }));
+        setStockByItemKey(nextStocks);
+        cartItems.forEach((item) => {
+          const available = Number(nextStocks[item.key]?.availableQuantity || 0);
+          if (available > 0 && Number(item.quantity) > available) {
+            updateQuantity(item.key, available);
+          }
+        });
+      })
+      .catch(() => {
+        if (active) setStockByItemKey({});
+      })
+      .finally(() => {
+        if (active) setStockLoading(false);
+      });
+
+    return () => { active = false; };
+  }, [cartItems, updateQuantity]);
 
   useEffect(() => {
     const orderId = submitState.order?.orderId;
@@ -444,6 +461,14 @@ function CheckoutPage({ auth, onLogout }) {
   function handleFieldChange(event) {
     const { name, value } = event.target;
     setForm((current) => ({ ...current, [name]: value }));
+  }
+
+  function handleCartQuantityChange(item, value) {
+    const available = Number(stockByItemKey[item.key]?.availableQuantity || 0);
+    if (available <= 0) return;
+    const requested = Number(value);
+    const nextQuantity = Math.min(Math.max(1, Number.isFinite(requested) ? requested : 1), available);
+    updateQuantity(item.key, nextQuantity);
   }
 
   async function handleSubmit(event) {
@@ -497,6 +522,7 @@ function CheckoutPage({ auth, onLogout }) {
         .filter(Boolean)
         .join(' | '),
       currency: 'VND',
+      shippingFee,
       items: verifiedItems.map((item) => ({
         productId: item.id,
         productName: item.name,
@@ -530,17 +556,17 @@ function CheckoutPage({ auth, onLogout }) {
         throw new Error(parsed?.message || `Request failed with status ${response.status}`);
       }
 
-      setSubmitState({
-        status: 'success',
-        message: parsed.message ?? 'OK',
-        order: parsed.data,
-      });
+      const checkoutUrl = parsed.data?.checkoutUrl;
+      if (!checkoutUrl) {
+        throw new Error('Không nhận được đường dẫn thanh toán. Vui lòng thử lại.');
+      }
       window.sessionStorage.setItem('stepzone-last-order-id', parsed.data.orderId);
       clearCart();
+      window.location.assign(checkoutUrl);
     } catch (error) {
       setSubmitState({
         status: 'error',
-        message: error instanceof Error ? error.message : 'Unable to place your order. Please try again.',
+        message: error instanceof Error ? error.message : 'Không thể tạo đơn hàng. Vui lòng thử lại.',
         order: null,
       });
     }
@@ -552,12 +578,8 @@ function CheckoutPage({ auth, onLogout }) {
         <a className="checkout-brand" href="/">StepZone</a>
         <div className="checkout-header__meta">
           <Link className="checkout-back" to="/products">
-            Continue shopping
+            Tiếp tục mua sắm
           </Link>
-          <span className="checkout-secure">
-            <FiLock aria-hidden="true" />
-            Secure Checkout
-          </span>
         </div>
       </header>
 
@@ -568,41 +590,40 @@ function CheckoutPage({ auth, onLogout }) {
           auth={auth}
           onLogout={onLogout}
         />
-        <ProgressSteps isSubmitted={submitState.status === 'success'} />
         <div className="checkout-layout">
           <form className="checkout-form" onSubmit={handleSubmit}>
             <section className="checkout-section checkout-section--panel">
               <div className="checkout-section__head">
                 <div>
-                  <p className="checkout-section__eyebrow">Step 01</p>
-                  <h1>Shipping Address</h1>
+                  <p className="checkout-section__eyebrow">Bước 01</p>
+                  <h1>Địa chỉ giao hàng</h1>
                 </div>
                 <span className="checkout-section__badge">
                   <FiShield aria-hidden="true" />
-                  Customer details
+                  Thông tin người nhận
                 </span>
               </div>
               <div className="shipping-grid">
-                <CheckoutField label="First Name" name="firstName" value={form.firstName} onChange={handleFieldChange} />
-                <CheckoutField label="Last Name" name="lastName" value={form.lastName} onChange={handleFieldChange} />
+                <CheckoutField label="Tên" name="firstName" value={form.firstName} onChange={handleFieldChange} />
+                <CheckoutField label="Họ" name="lastName" value={form.lastName} onChange={handleFieldChange} />
                 <CheckoutField label="Email" name="email" type="email" value={form.email} onChange={handleFieldChange} wide />
-                <CheckoutField label="Street Address" name="address1" value={form.address1} onChange={handleFieldChange} wide />
-                <CheckoutField label="Apartment, suite, etc. (optional)" name="address2" value={form.address2} onChange={handleFieldChange} wide />
+                <CheckoutField label="Địa chỉ" name="address1" value={form.address1} onChange={handleFieldChange} wide />
+                <CheckoutField label="Căn hộ, tòa nhà... (không bắt buộc)" name="address2" value={form.address2} onChange={handleFieldChange} wide />
                 <VietnamAdministrativeFields form={form} setForm={setForm} />
-                <CheckoutField label="Postal Code" name="zipCode" value={form.zipCode} onChange={handleFieldChange} />
-                <CheckoutField label="Phone Number" name="phone" value={form.phone} onChange={handleFieldChange} />
+                <CheckoutField label="Mã bưu chính" name="zipCode" value={form.zipCode} onChange={handleFieldChange} />
+                <CheckoutField label="Số điện thoại" name="phone" value={form.phone} onChange={handleFieldChange} />
               </div>
             </section>
 
             <section className="checkout-section checkout-section--panel">
               <div className="checkout-section__head">
                 <div>
-                  <p className="checkout-section__eyebrow">Step 02</p>
-                  <h2>Shipping Method</h2>
+                  <p className="checkout-section__eyebrow">Bước 02</p>
+                  <h2>Phương thức giao hàng</h2>
                 </div>
                 <span className="checkout-section__badge">
                   <FiTruck aria-hidden="true" />
-                  Delivery options
+                  Lựa chọn giao hàng
                 </span>
               </div>
               {Object.entries(shippingOptions).map(([key, option]) => (
@@ -621,7 +642,7 @@ function CheckoutPage({ auth, onLogout }) {
                     <strong>{option.label}</strong>
                     <small>{option.description}</small>
                   </span>
-                  <b>{option.fee === 0 ? 'Free' : formatCurrency(option.fee)}</b>
+                  <b>{option.fee === 0 ? 'Miễn phí' : formatCurrency(option.fee)}</b>
                 </label>
               ))}
             </section>
@@ -629,24 +650,24 @@ function CheckoutPage({ auth, onLogout }) {
             <section className="checkout-section checkout-section--panel">
               <div className="checkout-section__head">
                 <div>
-                  <p className="checkout-section__eyebrow">Step 03</p>
-                  <h2>Review & Pay</h2>
+                  <p className="checkout-section__eyebrow">Bước 03</p>
+                  <h2>Xác nhận và thanh toán</h2>
                 </div>
                 <span className="checkout-section__badge">
                   <FiPackage aria-hidden="true" />
-                  Secure payment
+                  Thanh toán an toàn
                 </span>
               </div>
-              <p className="checkout-hint">Review your details and continue to a secure payment page.</p>
+              <p className="checkout-hint">Kiểm tra thông tin rồi tiếp tục đến trang thanh toán an toàn.</p>
             </section>
 
             <div className="checkout-actions">
               <div className="checkout-actions__summary">
-                <span>Ready to checkout</span>
-                <strong>{activeItemCount} items selected</strong>
+                <span>Sẵn sàng thanh toán</span>
+                <strong>{activeItemCount} sản phẩm đã chọn</strong>
               </div>
               <button className="checkout-button" type="submit" disabled={submitState.status === 'submitting'}>
-                {submitState.status === 'submitting' ? 'Creating order...' : 'Continue to Payment'}
+                {submitState.status === 'submitting' ? 'Đang tạo đơn...' : 'Tiếp tục thanh toán'}
               </button>
             </div>
           </form>
@@ -654,17 +675,17 @@ function CheckoutPage({ auth, onLogout }) {
           <div className="checkout-sidebar">
             <OrderSummary
               cartItems={cartItems}
-              onQuantityChange={updateQuantity}
               onRemove={removeItem}
               subtotal={subtotal}
               shippingFee={shippingFee}
-              vatAmount={vatAmount}
               totalAmount={totalAmount}
+              onQuantityChange={handleCartQuantityChange}
+              stockByItemKey={stockByItemKey}
+              stockLoading={stockLoading}
             />
             <PaymentSummary
               subtotal={subtotal}
               shippingFee={shippingFee}
-              vatAmount={vatAmount}
               totalAmount={totalAmount}
             />
             <SubmissionCard submitState={submitState} />
@@ -675,15 +696,15 @@ function CheckoutPage({ auth, onLogout }) {
       <footer className="checkout-footer">
         <div>
           <h2>StepZone</h2>
-          <p>Elevating streetwear through curated design and high-performance aesthetics.</p>
+          <p>Giày thể thao được chọn lọc cho phong cách năng động mỗi ngày.</p>
         </div>
         <nav aria-label="Footer">
-          <a href="/">Support</a>
-          <a href="/">Shipping</a>
-          <a href="/">Privacy Policy</a>
-          <a href="/">Contact</a>
-          <a href="/">Returns</a>
-          <a href="/">Terms of Service</a>
+          <a href="/">Hỗ trợ</a>
+          <a href="/">Giao hàng</a>
+          <a href="/">Chính sách bảo mật</a>
+          <a href="/">Liên hệ</a>
+          <a href="/">Đổi trả</a>
+          <a href="/">Điều khoản sử dụng</a>
         </nav>
         <small>© 2026 STEPZONE ALL RIGHTS RESERVED.</small>
       </footer>
