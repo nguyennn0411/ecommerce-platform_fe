@@ -2,14 +2,16 @@ import { useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { FiSearch, FiHeart, FiShoppingBag, FiUser, FiMenu, FiX } from 'react-icons/fi'
 import { useCart } from '../cart/CartContext.jsx'
+import { getCurrentProfile } from '../keycloak.jsx'
 
-const NAV_ITEMS = [
+let NAV_ITEMS = [
   { label: 'Mới về', to: '/' },
   { label: 'Thương hiệu', to: '/products' },
   { label: 'Nam', to: '/products' },
   { label: 'Nữ', to: '/products' },
   { label: 'Trẻ em', to: '/products' },
   { label: 'Bài viết', to: '/products' },
+  { label: 'Dashboard', to: '/dashboard'}
 ]
 
 export default function SiteHeader() {
@@ -18,6 +20,12 @@ export default function SiteHeader() {
   const navigate = useNavigate()
   const { items } = useCart()
   const cartCount = items.reduce((sum, item) => sum + Number(item.quantity || 0), 0)
+
+  const profile = getCurrentProfile();
+  if (!profile.roles.includes('ADMIN')) {
+    NAV_ITEMS = NAV_ITEMS.filter((item) => item.label !== 'Dashboard');
+  }
+  
 
   const onSearch = (e) => {
     e.preventDefault()

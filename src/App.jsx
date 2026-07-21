@@ -11,6 +11,7 @@ import OrdersHistoryPage from './pages/OrdersHistoryPage'
 import OrderDetailPage from './pages/OrderDetailPage'
 import { getCurrentProfile, logout } from './keycloak.jsx'
 import { CartProvider } from './cart/CartContext.jsx'
+import Dashboard from './pages/Dashboard.jsx'
 
 function CheckoutRoute({ auth }) {
   if (!auth?.authenticated) {
@@ -54,6 +55,7 @@ function App({ initialAuth }) {
           <Route path="orders" element={<OrdersRoute auth={auth} />} />
           <Route path="orders/:orderId" element={<OrderDetailRoute auth={auth} />} />
         </Route>
+        <Route path='dashboard' element={<Dashboard></Dashboard>}></Route>
         <Route
           path="login"
           element={

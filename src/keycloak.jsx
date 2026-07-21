@@ -46,6 +46,7 @@ function normalizeProfile() {
     firstName: tokenParsed.given_name ?? '',
     lastName: tokenParsed.family_name ?? '',
     username: tokenParsed.preferred_username ?? '',
+    roles: keycloak.tokenParsed?.realm_access?.roles ?? []
   };
 }
 
