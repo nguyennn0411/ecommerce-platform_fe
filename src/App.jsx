@@ -9,6 +9,7 @@ import CheckoutPage from './pages/CheckoutPage'
 import PaymentSuccessPage from './pages/PaymentSuccessPage'
 import OrdersHistoryPage from './pages/OrdersHistoryPage'
 import OrderDetailPage from './pages/OrderDetailPage'
+import StaffOrdersPage from './pages/StaffOrdersPage'
 import { getCurrentProfile, logout } from './keycloak.jsx'
 import { CartProvider } from './cart/CartContext.jsx'
 
@@ -33,7 +34,12 @@ function OrderDetailRoute({ auth }) {
     return <Navigate to="/login" replace />
   }
 
-  return <OrderDetailPage />
+  return <OrderDetailPage auth={auth} />
+}
+
+function StaffOrdersRoute({ auth }) {
+  if (!auth?.authenticated) return <Navigate to="/login" replace />
+  return <StaffOrdersPage />
 }
 
 function App({ initialAuth }) {
@@ -53,6 +59,7 @@ function App({ initialAuth }) {
           <Route path="products/:productId" element={<ProductDetailPage />} />
           <Route path="orders" element={<OrdersRoute auth={auth} />} />
           <Route path="orders/:orderId" element={<OrderDetailRoute auth={auth} />} />
+          <Route path="staff/orders" element={<StaffOrdersRoute auth={auth} />} />
         </Route>
         <Route
           path="login"

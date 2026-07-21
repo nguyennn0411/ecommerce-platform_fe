@@ -47,11 +47,12 @@ function getAddress(description) {
   return address || 'Chưa có địa chỉ giao hàng.'
 }
 
-export default function OrderDetailPage() {
+export default function OrderDetailPage({ auth }) {
   const { orderId } = useParams()
   const [order, setOrder] = useState(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
+  const [cancelling, setCancelling] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -77,6 +78,32 @@ export default function OrderDetailPage() {
     loadOrder()
     return () => { active = false }
   }, [orderId])
+
+  async function cancelOrder() {
+    if (!window.confirm('Bạn có chắc muốn hủy đơn hàng này?')) return
+
+    setCancelling(true)
+    try {
+      const response = await fetch(`${ORDER_API_BASE}/${orderId}/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: auth?.userId || order.userId,
+          reason: 'Cancelled by customer from My Orders',
+        }),
+      })
+      const body = await response.json()
+      if (!response.ok || !body?.success) {
+        throw new Error(body?.message || 'Không thể hủy đơn hàng.')
+      }
+      setOrder(body.data)
+      setError('')
+    } catch (requestError) {
+      setError(requestError.message || 'Không thể hủy đơn hàng.')
+    } finally {
+      setCancelling(false)
+    }
+  }
 
   if (loading) return <section className="order-detail-state">Đang tải chi tiết đơn hàng...</section>
   if (error || !order) {
@@ -171,6 +198,7 @@ export default function OrderDetailPage() {
             <span><FiCreditCard /> PayOS · {order.currency || 'VND'}</span>
             {isFailed && order.failureReason ? <small>{order.failureReason}</small> : null}
             {isPending && order.checkoutUrl ? <a href={order.checkoutUrl} target="_blank" rel="noreferrer">Tiếp tục thanh toán <FiArrowRight /></a> : null}
+            {isPending ? <button type="button" onClick={cancelOrder} disabled={cancelling}>{cancelling ? 'Đang hủy đơn...' : 'Hủy đơn hàng'}</button> : null}
           </section>
 
           <section className="order-total-card">
