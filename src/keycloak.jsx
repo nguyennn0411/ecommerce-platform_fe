@@ -36,6 +36,8 @@ function toStableUuid(seed) {
 function normalizeProfile() {
   const tokenParsed = keycloak.tokenParsed ?? {};
   const rawUserId = tokenParsed.sub ?? tokenParsed.email ?? tokenParsed.preferred_username ?? '';
+  const realmRoles = tokenParsed.realm_access?.roles ?? [];
+  const clientRoles = tokenParsed.resource_access?.['stepzone-web']?.roles ?? [];
 
   return {
     authenticated: Boolean(keycloak.authenticated),
@@ -46,7 +48,7 @@ function normalizeProfile() {
     firstName: tokenParsed.given_name ?? '',
     lastName: tokenParsed.family_name ?? '',
     username: tokenParsed.preferred_username ?? '',
-    roles: keycloak.tokenParsed?.realm_access?.roles ?? []
+    roles: [...new Set([...realmRoles, ...clientRoles])],
   };
 }
 
@@ -73,6 +75,7 @@ export const initAuthentication = (onAuthenticatedCallback) => {
       firstName: '',
       lastName: '',
       username: '',
+      roles: [],
     });
   });
 };
