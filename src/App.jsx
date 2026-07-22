@@ -10,6 +10,8 @@ import PaymentSuccessPage from './pages/PaymentSuccessPage'
 import OrdersHistoryPage from './pages/OrdersHistoryPage'
 import OrderDetailPage from './pages/OrderDetailPage'
 import StaffOrdersPage from './pages/StaffOrdersPage'
+import AdminProductListPage from './pages/AdminProductListPage'
+import AdminProductFormPage from './pages/AdminProductFormPage'
 import { getCurrentProfile, logout } from './keycloak.jsx'
 import { CartProvider } from './cart/CartContext.jsx'
 import Dashboard from './pages/Dashboard.jsx'
@@ -70,12 +72,29 @@ function StaffOrdersRoute({ auth }) {
   return <StaffOrdersPage auth={auth} onLogout={logout} />
 }
 
+function StaffProductsRoute({ auth }) {
+  if (!auth?.authenticated) return <Navigate to="/login" replace />
+  if (!hasStaffAccess(auth)) {
+    return <Navigate to="/orders" replace />
+  }
+
+  return <AdminProductListPage auth={auth} onLogout={logout} />
+}
+
+function StaffProductFormRoute({ auth }) {
+  if (!auth?.authenticated) return <Navigate to="/login" replace />
+  if (!hasStaffAccess(auth)) {
+    return <Navigate to="/orders" replace />
+  }
+
+  return <AdminProductFormPage auth={auth} onLogout={logout} />
+}
+
 function UserProfileRoute({ auth }) {
   if (!auth?.authenticated) {
-    return <Navigate to='/login' replace></Navigate>
-  } else {
-    return <UserProfile></UserProfile>
+    return <Navigate to="/login" replace />
   }
+  return <UserProfile />
 }
 
 function App({ initialAuth }) {
@@ -89,29 +108,32 @@ function App({ initialAuth }) {
     <CartProvider>
       <BrowserRouter>
         <Routes>
-        <Route path="staff/orders" element={<StaffOrdersRoute auth={auth} />} />
-        <Route element={<MainLayout />}>
-          <Route index element={<CustomerOnlyRoute auth={auth}><HomePage /></CustomerOnlyRoute>} />
-          <Route path="products" element={<CustomerOnlyRoute auth={auth}><ProductListPage /></CustomerOnlyRoute>} />
-          <Route path="products/:productId" element={<CustomerOnlyRoute auth={auth}><ProductDetailPage /></CustomerOnlyRoute>} />
-          <Route path="orders" element={<OrdersRoute auth={auth} />} />
-          <Route path="orders/:orderId" element={<OrderDetailRoute auth={auth} />} />
-          <Route path='/profile' element={<UserProfileRoute auth={auth}></UserProfileRoute>}></Route>
-        </Route>
-        <Route path='dashboard' element={<Dashboard></Dashboard>}></Route>
-        <Route
-          path="login"
-          element={
-            auth?.authenticated ? (
-              <Navigate to={hasStaffAccess(auth) ? '/staff/orders' : '/'} replace />
-            ) : (
-              <LoginPage onAuthSuccess={handleAuthSuccess} />
-            )
-          }
-        />
-        <Route path="checkout" element={<CheckoutRoute auth={auth} />} />
-        <Route path="payment/success" element={<PaymentSuccessPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="staff/orders" element={<StaffOrdersRoute auth={auth} />} />
+          <Route path="staff/products" element={<StaffProductsRoute auth={auth} />} />
+          <Route path="staff/products/new" element={<StaffProductFormRoute auth={auth} />} />
+          <Route path="staff/products/:productId/edit" element={<StaffProductFormRoute auth={auth} />} />
+          <Route element={<MainLayout />}>
+            <Route index element={<CustomerOnlyRoute auth={auth}><HomePage /></CustomerOnlyRoute>} />
+            <Route path="products" element={<CustomerOnlyRoute auth={auth}><ProductListPage /></CustomerOnlyRoute>} />
+            <Route path="products/:productId" element={<CustomerOnlyRoute auth={auth}><ProductDetailPage /></CustomerOnlyRoute>} />
+            <Route path="orders" element={<OrdersRoute auth={auth} />} />
+            <Route path="orders/:orderId" element={<OrderDetailRoute auth={auth} />} />
+            <Route path="profile" element={<UserProfileRoute auth={auth} />} />
+          </Route>
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route
+            path="login"
+            element={
+              auth?.authenticated ? (
+                <Navigate to={hasStaffAccess(auth) ? '/staff/orders' : '/'} replace />
+              ) : (
+                <LoginPage onAuthSuccess={handleAuthSuccess} />
+              )
+            }
+          />
+          <Route path="checkout" element={<CheckoutRoute auth={auth} />} />
+          <Route path="payment/success" element={<PaymentSuccessPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </CartProvider>
