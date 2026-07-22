@@ -576,11 +576,6 @@ function CheckoutPage({ auth, onLogout }) {
     <main className="checkout-page">
       <header className="checkout-header">
         <a className="checkout-brand" href="/">StepZone</a>
-        <div className="checkout-header__meta">
-          <Link className="checkout-back" to="/products">
-            Tiếp tục mua sắm
-          </Link>
-        </div>
       </header>
 
       <section className="checkout-main">
@@ -666,9 +661,14 @@ function CheckoutPage({ auth, onLogout }) {
                 <span>Sẵn sàng thanh toán</span>
                 <strong>{activeItemCount} sản phẩm đã chọn</strong>
               </div>
-              <button className="checkout-button" type="submit" disabled={submitState.status === 'submitting'}>
-                {submitState.status === 'submitting' ? 'Đang tạo đơn...' : 'Tiếp tục thanh toán'}
-              </button>
+              <div className="checkout-actions__buttons">
+                <Link className="checkout-button checkout-button--secondary" to="/products">
+                  Tiếp tục mua sắm
+                </Link>
+                <button className="checkout-button" type="submit" disabled={submitState.status === 'submitting'}>
+                  {submitState.status === 'submitting' ? 'Đang tạo đơn...' : 'Tiếp tục thanh toán'}
+                </button>
+              </div>
             </div>
           </form>
 

@@ -1,22 +1,28 @@
-import { useEffect, useState } from 'react'
-import { FiArrowRight, FiBox, FiCheckCircle, FiClock, FiCreditCard, FiLogOut, FiRefreshCw, FiXCircle } from 'react-icons/fi'
+import { useEffect, useMemo, useState } from 'react'
+import { FiArrowRight, FiBox, FiCheckCircle, FiClock, FiCreditCard, FiLogOut, FiRefreshCw, FiSearch, FiTruck, FiXCircle } from 'react-icons/fi'
 import { Link } from 'react-router-dom'
 import { fetchProductById } from '../api/products'
 import { getMainImage } from '../utils/productUtils'
 
 const ORDER_API_BASE = '/api/v1/orders'
+const ORDERS_PER_PAGE = 5
 
 const FILTERS = [
   { value: 'ALL', label: 'Tất cả' },
   { value: 'PENDING', label: 'Chờ thanh toán' },
-  { value: 'CONFIRMED', label: 'Đã xác nhận' },
+  { value: 'CONFIRMED', label: 'Đã thanh toán' },
+  { value: 'SHIPPING', label: 'Đang giao' },
+  { value: 'COMPLETED', label: 'Hoàn thành' },
   { value: 'FAILED', label: 'Không thành công' },
 ]
 
 const STATUS_META = {
   PENDING: { label: 'Chờ thanh toán', tone: 'pending', icon: FiClock },
   PAYMENT_PENDING: { label: 'Chờ thanh toán', tone: 'pending', icon: FiClock },
-  CONFIRMED: { label: 'Đã xác nhận', tone: 'confirmed', icon: FiCheckCircle },
+  CONFIRMED: { label: 'Đã thanh toán', tone: 'confirmed', icon: FiCheckCircle },
+  SHIPPING: { label: 'Đang giao', tone: 'shipping', icon: FiTruck },
+  COMPLETED: { label: 'Hoàn thành', tone: 'completed', icon: FiCheckCircle },
+  RETURNED: { label: 'Hoàn về', tone: 'returned', icon: FiRefreshCw },
   FAILED: { label: 'Thanh toán thất bại', tone: 'failed', icon: FiXCircle },
   CANCELLED: { label: 'Đã hủy', tone: 'failed', icon: FiXCircle },
 }
@@ -44,10 +50,26 @@ function getStatusMeta(status) {
   return STATUS_META[status] || { label: status || 'Đang xử lý', tone: 'pending', icon: FiClock }
 }
 
+function getMemberRank(totalSpent) {
+  if (totalSpent >= 50000000) return 'Kim cương'
+  if (totalSpent >= 10000000) return 'Vàng'
+  if (totalSpent >= 5000000) return 'Bạc'
+  return 'Thành viên mới'
+}
+
+function normalizeSearch(value) {
+  return String(value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+}
+
 export default function OrdersHistoryPage({ auth, onLogout }) {
   const [orders, setOrders] = useState([])
   const [productImages, setProductImages] = useState({})
   const [filter, setFilter] = useState('ALL')
+  const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -88,30 +110,97 @@ export default function OrdersHistoryPage({ auth, onLogout }) {
     loadOrders()
   }, [auth.userId])
 
-  const displayedOrders = filter === 'ALL'
-    ? orders
-    : orders.filter((order) => (
-      order.status === filter ||
-      (filter === 'PENDING' && order.status === 'PAYMENT_PENDING') ||
-      (filter === 'FAILED' && order.status === 'CANCELLED')
-    ))
+  useEffect(() => {
+    setPage(1)
+  }, [filter, search])
+
+  const displayedOrders = useMemo(() => {
+    const byStatus = filter === 'ALL'
+      ? orders
+      : orders.filter((order) => (
+        order.status === filter ||
+        (filter === 'PENDING' && order.status === 'PAYMENT_PENDING') ||
+        (filter === 'FAILED' && ['CANCELLED', 'RETURNED'].includes(order.status))
+      ))
+
+    const keyword = normalizeSearch(search.trim())
+    if (!keyword) return byStatus
+
+    return byStatus.filter((order) => {
+      const statusLabel = getStatusMeta(order.status).label
+      const itemValues = (order.items || []).flatMap((item) => [
+        item.productName,
+        item.productId,
+        item.size,
+        item.color,
+      ])
+
+      return [
+        order.orderId,
+        order.description,
+        order.status,
+        statusLabel,
+        order.totalAmount,
+        order.paymentOrderCode,
+        ...itemValues,
+      ].some((value) => normalizeSearch(value).includes(keyword))
+    })
+  }, [filter, orders, search])
+
+  const totalPages = Math.max(1, Math.ceil(displayedOrders.length / ORDERS_PER_PAGE))
+  const safePage = Math.min(page, totalPages)
+  const pageStart = (safePage - 1) * ORDERS_PER_PAGE
+  const pageEnd = pageStart + ORDERS_PER_PAGE
+  const paginatedOrders = displayedOrders.slice(pageStart, pageEnd)
+  const totalSpent = orders
+    .filter((order) => ['CONFIRMED', 'SHIPPING', 'COMPLETED'].includes(order.status))
+    .reduce((sum, order) => sum + Number(order.totalAmount || 0), 0)
+  const memberRank = getMemberRank(totalSpent)
+  const displayName = auth.fullName || auth.username || auth.email || 'Khách hàng'
 
   return (
     <section className="orders-page">
       <header className="orders-hero">
         <div>
           <p className="orders-eyebrow">Tài khoản / Đơn hàng</p>
-          <h1>My Orders</h1>
+          <h1>{displayName}</h1>
           <p>Theo dõi thanh toán và trạng thái đơn hàng của bạn tại StepZone.</p>
         </div>
         <div className="orders-hero__meta">
-          <FiBox aria-hidden />
-          <span>{orders.length}</span>
-          <small>đơn hàng</small>
+          <article>
+            <FiBox aria-hidden />
+            <span>{orders.length}</span>
+            <small>đơn hàng</small>
+          </article>
+          <article>
+            <FiCreditCard aria-hidden />
+            <span>{formatVnd(totalSpent)}</span>
+            <small>tổng tiền hàng</small>
+          </article>
+          <div className="orders-member-row">
+            <p>Hạng thành viên: <strong>{memberRank}</strong></p>
+            <button type="button" className="orders-logout" onClick={onLogout}>
+              <FiLogOut />
+              Đăng xuất
+            </button>
+          </div>
         </div>
       </header>
 
       <div className="orders-toolbar">
+        <label className="orders-search">
+          <FiSearch aria-hidden />
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Tìm mã đơn, sản phẩm, size, màu..."
+          />
+          {search ? (
+            <button type="button" onClick={() => setSearch('')} aria-label="Xóa tìm kiếm">
+              <FiXCircle />
+            </button>
+          ) : null}
+        </label>
         <div className="orders-tabs" role="tablist" aria-label="Lọc đơn hàng">
           {FILTERS.map((item) => (
             <button
@@ -123,16 +212,6 @@ export default function OrdersHistoryPage({ auth, onLogout }) {
               {item.label}
             </button>
           ))}
-        </div>
-        <div className="orders-toolbar__actions">
-          <button type="button" className="orders-reload" onClick={loadOrders} disabled={loading}>
-            <FiRefreshCw className={loading ? 'spin' : ''} />
-            Làm mới
-          </button>
-          <button type="button" className="orders-logout" onClick={onLogout}>
-            <FiLogOut />
-            Logout
-          </button>
         </div>
       </div>
 
@@ -148,8 +227,9 @@ export default function OrdersHistoryPage({ auth, onLogout }) {
       ) : null}
 
       {!loading && !error && displayedOrders.length ? (
-        <div className="orders-list">
-          {displayedOrders.map((order) => {
+        <>
+          <div className="orders-list">
+          {paginatedOrders.map((order) => {
             const meta = getStatusMeta(order.status)
             const StatusIcon = meta.icon
             const totalItems = (order.items || []).reduce((total, item) => total + Number(item.quantity || 0), 0)
@@ -157,7 +237,7 @@ export default function OrdersHistoryPage({ auth, onLogout }) {
             return (
               <article className="order-card" key={order.orderId}>
                 <div className="order-card__top">
-                  <div>
+                  <div className="order-card__identity">
                     <p>Đơn hàng</p>
                     <h2>#{order.orderId?.slice(0, 8).toUpperCase()}</h2>
                     <small>{formatDate(order.createdAt)}</small>
@@ -202,7 +282,25 @@ export default function OrdersHistoryPage({ auth, onLogout }) {
               </article>
             )
           })}
-        </div>
+          </div>
+          <div className="orders-pagination">
+            <button
+              type="button"
+              disabled={safePage === 1}
+              onClick={() => setPage((current) => Math.max(1, current - 1))}
+            >
+              Trang trước
+            </button>
+            <span>Trang {safePage} / {totalPages}</span>
+            <button
+              type="button"
+              disabled={safePage === totalPages}
+              onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+            >
+              Trang sau
+            </button>
+          </div>
+        </>
       ) : null}
     </section>
   )

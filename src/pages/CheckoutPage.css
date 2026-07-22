@@ -468,6 +468,14 @@
   letter-spacing: -0.4px;
 }
 
+.checkout-actions__buttons {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
 .checkout-button {
   border: 0;
   border-radius: 999px;
@@ -480,11 +488,19 @@
   padding: 17px 30px;
   text-transform: uppercase;
   box-shadow: 0 18px 34px -18px rgba(17, 24, 39, 0.72);
+  text-decoration: none;
 }
 
 .checkout-button:disabled {
   opacity: 0.72;
   cursor: wait;
+}
+
+.checkout-button--secondary {
+  background: #fff;
+  border: 1px solid #111827;
+  box-shadow: none;
+  color: #111827;
 }
 
 .checkout-sidebar {
