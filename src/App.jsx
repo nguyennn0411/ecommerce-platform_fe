@@ -13,6 +13,7 @@ import StaffOrdersPage from './pages/StaffOrdersPage'
 import { getCurrentProfile, logout } from './keycloak.jsx'
 import { CartProvider } from './cart/CartContext.jsx'
 import Dashboard from './pages/Dashboard.jsx'
+import UserProfile from './pages/UserProfile.jsx'
 
 function hasStaffAccess(auth) {
   const roles = auth?.roles || []
@@ -69,6 +70,14 @@ function StaffOrdersRoute({ auth }) {
   return <StaffOrdersPage auth={auth} onLogout={logout} />
 }
 
+function UserProfileRoute({ auth }) {
+  if (!auth?.authenticated) {
+    return <Navigate to='/login' replace></Navigate>
+  } else {
+    return <UserProfile></UserProfile>
+  }
+}
+
 function App({ initialAuth }) {
   const [auth, setAuth] = useState(initialAuth)
 
@@ -87,6 +96,7 @@ function App({ initialAuth }) {
           <Route path="products/:productId" element={<CustomerOnlyRoute auth={auth}><ProductDetailPage /></CustomerOnlyRoute>} />
           <Route path="orders" element={<OrdersRoute auth={auth} />} />
           <Route path="orders/:orderId" element={<OrderDetailRoute auth={auth} />} />
+          <Route path='/profile' element={<UserProfileRoute auth={auth}></UserProfileRoute>}></Route>
         </Route>
         <Route path='dashboard' element={<Dashboard></Dashboard>}></Route>
         <Route

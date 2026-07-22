@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { FiSearch, FiHeart, FiShoppingBag, FiUser, FiMenu, FiX } from 'react-icons/fi'
+import { FiSearch, FiHeart, FiShoppingBag, FiUser, FiMenu, FiX, FiPackage } from 'react-icons/fi'
 import { useCart } from '../cart/CartContext.jsx'
 import { getCurrentProfile } from '../keycloak.jsx'
 
@@ -83,7 +83,10 @@ export default function SiteHeader() {
             <FiShoppingBag />
             {cartCount ? <span className="sz-cart-count">{cartCount}</span> : null}
           </Link>
-          <Link to="/orders" className="sz-icon-btn" aria-label="Tài khoản và đơn hàng">
+          <Link to="/orders" className="sz-icon-btn" aria-label="Đơn hàng">
+            <FiPackage />
+          </Link>
+          <Link to='/profile' className='sz-icon-btn' aria-label='Tài khoản'>
             <FiUser />
           </Link>
         </div>
