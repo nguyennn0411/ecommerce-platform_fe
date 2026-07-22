@@ -1,22 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
-  FiBell,
-  FiBox,
   FiCheckCircle,
   FiClock,
-  FiHelpCircle,
-  FiHome,
-  FiLogOut,
-  FiPackage,
   FiRefreshCw,
   FiSearch,
-  FiSettings,
   FiShoppingBag,
   FiTruck,
-  FiUser,
-  FiUsers,
   FiXCircle,
 } from 'react-icons/fi'
+import StaffShell from '../components/StaffShell'
 
 const ORDER_API_BASE = '/api/v1/orders'
 const ORDERS_PER_PAGE = 8
@@ -225,46 +217,26 @@ export default function StaffOrdersPage({ auth, onLogout }) {
   const items = selectedOrder?.items || []
 
   return (
-    <main className="staff-shell">
-      <aside className="staff-sidebar">
-        <div>
-          <h1>Trang nhân viên</h1>
-          <p>Quản lý vận hành</p>
-        </div>
-        <nav aria-label="Staff navigation">
-          <span><FiHome /> Tổng quan</span>
-          <span><FiPackage /> Sản phẩm</span>
-          <span><FiBox /> Tồn kho</span>
-          <strong><FiShoppingBag /> Đơn hàng</strong>
-          <span><FiUsers /> Khách hàng</span>
-          <span><FiSettings /> Cài đặt</span>
-        </nav>
-        <button type="button" onClick={onLogout}><FiLogOut /> Đăng xuất</button>
-      </aside>
-
-      <section className="staff-workspace">
-        <header className="staff-topbar">
-          <label>
-            <FiSearch aria-hidden />
-            <input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Tìm mã đơn, tên/email, sản phẩm, size, màu..."
-            />
-            {search ? (
-              <button type="button" onClick={() => setSearch('')} aria-label="Xóa tìm kiếm">
-                <FiXCircle />
-              </button>
-            ) : null}
-          </label>
-          <div>
-            <button type="button" aria-label="Notifications"><FiBell /></button>
-            <button type="button" aria-label="Help"><FiHelpCircle /></button>
-            <span>{auth?.fullName || auth?.email || 'Nhân viên'}<small>Nhân viên đơn hàng</small></span>
-            <FiUser />
-          </div>
-        </header>
-
+    <StaffShell
+      auth={auth}
+      onLogout={onLogout}
+      roleLabel="Nhân viên đơn hàng"
+      topbarExtra={
+        <label className="staff-topbar-search">
+          <FiSearch aria-hidden />
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Tìm mã đơn, tên/email, sản phẩm, size, màu..."
+          />
+          {search ? (
+            <button type="button" onClick={() => setSearch('')} aria-label="Xóa tìm kiếm">
+              <FiXCircle />
+            </button>
+          ) : null}
+        </label>
+      }
+    >
         <div className="staff-content staff-content--orders-only">
           <section className="staff-order-main">
             <section className="staff-queue-summary" aria-label="Tổng quan đơn hàng">
@@ -461,7 +433,6 @@ export default function StaffOrdersPage({ auth, onLogout }) {
           </section>
 
         </div>
-      </section>
-    </main>
+    </StaffShell>
   )
 }
