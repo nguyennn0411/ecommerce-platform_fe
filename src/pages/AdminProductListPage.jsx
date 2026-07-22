@@ -252,7 +252,7 @@ export default function AdminProductListPage({ auth, onLogout }) {
         </section>
 
         <p className="admin-product-note">
-          Lưu ý: nhập tồn kho sẽ nối API inventory sau (Tú Anh). Hiện chỉ quản lý catalog.
+          Tạo/sửa sản phẩm sẽ đồng bộ tồn kho qua API inventory (bulk upsert).
         </p>
       </div>
     </StaffShell>
