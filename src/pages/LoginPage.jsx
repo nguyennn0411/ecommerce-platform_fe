@@ -2,6 +2,8 @@ import React from 'react';
 import { Container, Row, Col, Form, Button, Navbar, Nav, InputGroup } from 'react-bootstrap';
 import { FiSearch, FiHeart, FiShoppingBag, FiUser } from 'react-icons/fi';
 import { login, loginWithGoogle } from '../keycloak';
+import SiteFooter from '../components/SiteFooter';
+import SiteHeader from '../components/SiteHeader';
 
 const LoginPage = ({ onAuthSuccess }) => {
 
@@ -24,40 +26,7 @@ const LoginPage = ({ onAuthSuccess }) => {
   return (
     <div className="bg-light min-vh-100 d-flex flex-column" style={{ fontFamily: 'sans-serif' }}>
       
-      {/* --- NAVBAR --- */}
-      <Navbar bg="white" expand="lg" className="py-3 border-bottom px-4">
-        <Container fluid>
-          <Navbar.Brand href="#" className="fw-bold fs-3 text-dark">StepZone</Navbar.Brand>
-          <Navbar.Toggle aria-controls="navbar-nav" />
-          <Navbar.Collapse id="navbar-nav">
-            <Nav className="mx-auto fw-semibold text-secondary" style={{ gap: '1.5rem' }}>
-              <Nav.Link href="#" className="text-muted">New</Nav.Link>
-              <Nav.Link href="#" className="text-muted">Sneakers</Nav.Link>
-              <Nav.Link href="#" className="text-muted">Men</Nav.Link>
-              <Nav.Link href="#" className="text-muted">Women</Nav.Link>
-              <Nav.Link href="#" className="text-muted">Sale</Nav.Link>
-              <Nav.Link href="#" className="text-muted">Collections</Nav.Link>
-            </Nav>
-            
-            {/* Right Side Icons & Search */}
-            <div className="d-flex align-items-center gap-3">
-              <InputGroup size="sm" style={{ maxWidth: '200px' }}>
-                <InputGroup.Text className="bg-light border-0 pr-0 text-muted">
-                  <FiSearch />
-                </InputGroup.Text>
-                <Form.Control
-                  placeholder="Search..."
-                  className="bg-light border-0 ps-1"
-                  style={{ boxShadow: 'none' }}
-                />
-              </InputGroup>
-              <FiHeart className="text-muted fs-5 style-pointer" style={{ cursor: 'pointer' }} />
-              <FiShoppingBag className="text-muted fs-5 style-pointer" style={{ cursor: 'pointer' }} />
-              <FiUser className="text-muted fs-5 style-pointer" style={{ cursor: 'pointer' }} />
-            </div>
-          </Navbar.Collapse>
-        </Container>
-      </Navbar>
+      <SiteHeader></SiteHeader>
 
       {/* --- MAIN CARD CONTAINER --- */}
       <Container className="flex-grow-1 d-flex align-items-center justify-content-center p-4">
@@ -75,39 +44,6 @@ const LoginPage = ({ onAuthSuccess }) => {
               </div>
 
               <Form>
-                {/* Email Input */}
-                <Form.Group className="mb-3" controlId="formBasicEmail">
-                  <Form.Label className="fw-semibold text-secondary small">Email</Form.Label>
-                  <Form.Control 
-                    type="email" 
-                    placeholder="example@gmail.com" 
-                    className="py-2.5 px-3 rounded-3"
-                    style={{ borderColor: '#dcdcdc' }}
-                  />
-                </Form.Group>
-
-                {/* Password Input */}
-                <Form.Group className="mb-3" controlId="formBasicPassword">
-                  <Form.Label className="fw-semibold text-secondary small">Password</Form.Label>
-                  <Form.Control 
-                    type="password" 
-                    placeholder="••••••••••" 
-                    className="py-2.5 px-3 rounded-3"
-                    style={{ borderColor: '#dcdcdc' }}
-                  />
-                </Form.Group>
-
-                {/* Remember Me & Forgot Password */}
-                <div className="d-flex justify-content-between align-items-center mb-4">
-                  <Form.Check 
-                    type="checkbox" 
-                    id="remember-me" 
-                    label="Remember me" 
-                    className="text-muted small"
-                  />
-                  <a href="#" className="text-dark fw-bold text-decoration-none small">Forgot password?</a>
-                </div>
-
                 {/* Submit Buttons */}
                 <Button 
                   variant="dark" 
@@ -127,12 +63,6 @@ const LoginPage = ({ onAuthSuccess }) => {
                 >
                   Continue with Google
                 </Button>
-
-                {/* Footer Link */}
-                <div className="text-center">
-                  <span className="text-muted small">Don’t have an account? </span>
-                  <a href="#" className="text-muted fw-semibold small text-decoration-underline">Sign up</a>
-                </div>
               </Form>
             </Col>
 
@@ -175,6 +105,8 @@ const LoginPage = ({ onAuthSuccess }) => {
           </Row>
         </div>
       </Container>
+
+      <SiteFooter></SiteFooter>
     </div>
   );
 };
