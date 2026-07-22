@@ -4,6 +4,8 @@ import { FiArrowLeft, FiPlus, FiTrash2 } from 'react-icons/fi'
 import StaffShell from '../components/StaffShell'
 import { createProduct, fetchProductById, updateProduct } from '../api/products'
 import { createCategory, fetchCategories } from '../api/categories'
+import { fetchVariantStocks, upsertBulkStock } from '../api/inventory'
+import { findStock } from '../utils/productUtils'
 
 const STATUSES = [
   { value: 'ACTIVE', label: 'Đang bán' },
@@ -12,14 +14,35 @@ const STATUSES = [
 ]
 
 function emptyVariant() {
-  return { size: '', color: '', sku: '', quantity: '' }
+  return { size: '', color: '', sku: '', quantity: '0' }
 }
 
 function emptyImage() {
   return { imageUrl: '', main: false }
 }
 
-function toPayload(form) {
+/** Format số tiền VND khi gõ: 3200000 → 3.200.000 */
+function formatPriceInput(value) {
+  const digits = String(value ?? '').replace(/\D/g, '')
+  if (!digits) return ''
+  return new Intl.NumberFormat('vi-VN').format(Number(digits))
+}
+
+function parsePriceInput(value) {
+  const digits = String(value ?? '').replace(/\D/g, '')
+  if (!digits) return NaN
+  return Number(digits)
+}
+
+function parseQuantity(value) {
+  const raw = String(value ?? '').trim()
+  if (raw === '') return 0
+  const n = Number(raw)
+  if (!Number.isFinite(n) || n < 0) return NaN
+  return Math.floor(n)
+}
+
+function toCatalogPayload(form) {
   const variants = (form.variants || [])
     .filter((v) => String(v.size || '').trim())
     .map((v) => ({
@@ -44,11 +67,57 @@ function toPayload(form) {
     brand: form.brand.trim() || null,
     description: form.description.trim() || null,
     categoryId: form.categoryId || null,
-    basePrice: Number(form.basePrice),
+    basePrice: parsePriceInput(form.basePrice),
     status: form.status || 'ACTIVE',
     variants,
     images,
   }
+}
+
+function toStockBulkPayload(productId, formVariants) {
+  const items = (formVariants || [])
+    .filter((v) => String(v.size || '').trim())
+    .map((v) => ({
+      size: String(v.size).trim(),
+      color: String(v.color || '').trim() || null,
+      quantity: parseQuantity(v.quantity),
+    }))
+
+  return { productId, items }
+}
+
+function normalizeCatalogForCompare(payload) {
+  return JSON.stringify({
+    name: payload.name || '',
+    brand: payload.brand || null,
+    description: payload.description || null,
+    categoryId: payload.categoryId || null,
+    basePrice: Number(payload.basePrice),
+    status: payload.status || 'ACTIVE',
+    variants: (payload.variants || []).map((v) => ({
+      size: v.size,
+      color: v.color || null,
+      sku: v.sku || null,
+    })),
+    images: (payload.images || []).map((img) => ({
+      imageUrl: img.imageUrl,
+      main: Boolean(img.main),
+    })),
+  })
+}
+
+function mergeVariantsWithStock(productVariants, stockVariants) {
+  if (!productVariants?.length) return [emptyVariant()]
+
+  return productVariants.map((v) => {
+    const stock = findStock(stockVariants, v.size, v.color)
+    return {
+      size: v.size || '',
+      color: v.color || '',
+      sku: v.sku || '',
+      quantity: stock ? String(stock.quantity ?? 0) : '0',
+    }
+  })
 }
 
 export default function AdminProductFormPage({ auth, onLogout }) {
@@ -63,6 +132,7 @@ export default function AdminProductFormPage({ auth, onLogout }) {
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
   const [newCategoryName, setNewCategoryName] = useState('')
+  const [initialCatalogKey, setInitialCatalogKey] = useState('')
 
   const [form, setForm] = useState({
     name: '',
@@ -84,27 +154,27 @@ export default function AdminProductFormPage({ auth, onLogout }) {
         if (cancelled) return
         setCategories(Array.isArray(categoryList) ? categoryList : [])
 
-        if (!isEdit) return
+        if (!isEdit) {
+          setLoading(false)
+          return
+        }
 
-        const product = await fetchProductById(productId, { token })
+        const [product, stockData] = await Promise.all([
+          fetchProductById(productId, { token }),
+          fetchVariantStocks(productId, { token }).catch(() => ({ variants: [] })),
+        ])
         if (cancelled) return
 
-        setForm({
+        const stockVariants = stockData?.variants || []
+
+        const nextForm = {
           name: product.name || '',
           brand: product.brand || '',
           description: product.description || '',
           categoryId: product.categoryId || '',
-          basePrice: product.basePrice != null ? String(product.basePrice) : '',
+          basePrice: product.basePrice != null ? formatPriceInput(product.basePrice) : '',
           status: product.status || 'ACTIVE',
-          variants:
-            product.variants?.length > 0
-              ? product.variants.map((v) => ({
-                  size: v.size || '',
-                  color: v.color || '',
-                  sku: v.sku || '',
-                  quantity: '',
-                }))
-              : [emptyVariant()],
+          variants: mergeVariantsWithStock(product.variants, stockVariants),
           images:
             product.images?.length > 0
               ? product.images.map((img) => ({
@@ -112,7 +182,9 @@ export default function AdminProductFormPage({ auth, onLogout }) {
                   main: Boolean(img.main),
                 }))
               : [{ ...emptyImage(), main: true }],
-        })
+        }
+        setForm(nextForm)
+        setInitialCatalogKey(normalizeCatalogForCompare(toCatalogPayload(nextForm)))
       } catch (err) {
         if (!cancelled) setError(err.message || 'Không tải được dữ liệu form.')
       } finally {
@@ -152,6 +224,18 @@ export default function AdminProductFormPage({ auth, onLogout }) {
     })
   }
 
+  async function syncStock(savedProductId) {
+    const stockPayload = toStockBulkPayload(savedProductId, form.variants)
+    if (stockPayload.items.length === 0) return
+
+    const invalid = stockPayload.items.find((item) => Number.isNaN(item.quantity))
+    if (invalid) {
+      throw new Error(`Số lượng kho không hợp lệ cho size ${invalid.size}.`)
+    }
+
+    await upsertBulkStock(stockPayload, { token })
+  }
+
   async function handleCreateCategory() {
     const name = newCategoryName.trim()
     if (!name) return
@@ -171,7 +255,7 @@ export default function AdminProductFormPage({ auth, onLogout }) {
     setError('')
     setInfo('')
 
-    const payload = toPayload(form)
+    const payload = toCatalogPayload(form)
     if (!payload.name) {
       setError('Vui lòng nhập tên sản phẩm.')
       return
@@ -185,15 +269,44 @@ export default function AdminProductFormPage({ auth, onLogout }) {
       return
     }
 
+    const stockCheck = toStockBulkPayload('temp', form.variants)
+    if (stockCheck.items.some((item) => Number.isNaN(item.quantity))) {
+      setError('Số lượng kho phải là số ≥ 0.')
+      return
+    }
+
     setSaving(true)
     try {
-      if (isEdit) {
-        await updateProduct(productId, payload, { token })
-        setInfo('Đã cập nhật sản phẩm. Tồn kho sẽ đồng bộ khi có API kho.')
-      } else {
+      let savedId = productId
+      const catalogChanged =
+        !isEdit || normalizeCatalogForCompare(payload) !== initialCatalogKey
+
+      if (!isEdit) {
         const created = await createProduct(payload, { token })
-        setInfo('Đã tạo sản phẩm. Tồn kho sẽ đồng bộ khi có API kho.')
-        navigate(`/staff/products/${created.id}/edit`, { replace: true })
+        savedId = created.id
+        setInitialCatalogKey(normalizeCatalogForCompare(payload))
+      } else if (catalogChanged) {
+        await updateProduct(productId, payload, { token })
+        setInitialCatalogKey(normalizeCatalogForCompare(payload))
+      }
+
+      try {
+        await syncStock(savedId)
+        if (!isEdit) {
+          setInfo('Đã tạo sản phẩm và đồng bộ tồn kho.')
+        } else if (catalogChanged) {
+          setInfo('Đã cập nhật sản phẩm và đồng bộ tồn kho.')
+        } else {
+          setInfo('Đã cập nhật tồn kho.')
+        }
+      } catch (stockErr) {
+        setError(
+          `Sản phẩm đã lưu nhưng đồng bộ kho thất bại: ${stockErr.message || 'lỗi không rõ'}. Hãy mở lại form và lưu lại số lượng.`,
+        )
+      }
+
+      if (!isEdit) {
+        navigate(`/staff/products/${savedId}/edit`, { replace: true })
       }
     } catch (err) {
       setError(err.message || 'Không lưu được sản phẩm.')
@@ -211,7 +324,7 @@ export default function AdminProductFormPage({ auth, onLogout }) {
               <FiArrowLeft /> Quay lại danh sách
             </Link>
             <h2>{isEdit ? 'Sửa sản phẩm' : 'Thêm sản phẩm mới'}</h2>
-            <p>Ảnh dùng URL công khai. Ô số lượng kho sẽ nối API inventory sau.</p>
+            <p>Ảnh dùng URL công khai. Số lượng kho đồng bộ qua API inventory sau khi lưu.</p>
           </div>
           {previewUrl ? (
             <img className="admin-form-preview" src={previewUrl} alt="Preview" />
@@ -247,14 +360,18 @@ export default function AdminProductFormPage({ auth, onLogout }) {
                 </label>
                 <label>
                   Giá (VND) *
-                  <input
-                    type="number"
-                    min="1"
-                    step="1000"
-                    value={form.basePrice}
-                    onChange={(e) => updateField('basePrice', e.target.value)}
-                    required
-                  />
+                  <div className="admin-price-field">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="off"
+                      placeholder="vd. 3.200.000"
+                      value={form.basePrice}
+                      onChange={(e) => updateField('basePrice', formatPriceInput(e.target.value))}
+                      required
+                    />
+                    <span>₫</span>
+                  </div>
                 </label>
                 <label>
                   Trạng thái
@@ -315,7 +432,7 @@ export default function AdminProductFormPage({ auth, onLogout }) {
 
             <section className="admin-form-card">
               <div className="admin-form-card-head">
-                <h3>Variants (size / màu / SKU)</h3>
+                <h3>Variants + tồn kho</h3>
                 <button
                   type="button"
                   onClick={() =>
@@ -347,11 +464,11 @@ export default function AdminProductFormPage({ auth, onLogout }) {
                     <input
                       type="number"
                       min="0"
-                      placeholder="SL kho (sau)"
+                      step="1"
+                      placeholder="SL kho"
                       value={variant.quantity}
                       onChange={(e) => updateVariant(index, 'quantity', e.target.value)}
-                      title="Sẽ gọi API inventory khi Tú Anh xong"
-                      disabled
+                      title="Số lượng tồn kho (absolute)"
                     />
                     <button
                       type="button"
@@ -369,9 +486,6 @@ export default function AdminProductFormPage({ auth, onLogout }) {
                   </div>
                 ))}
               </div>
-              <p className="admin-product-note">
-                Ô số lượng kho đang khóa — nối API điều chỉnh tồn sau khi inventory sẵn sàng.
-              </p>
             </section>
 
             <section className="admin-form-card">

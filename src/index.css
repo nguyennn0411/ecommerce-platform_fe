@@ -2352,3 +2352,19 @@ button {
   .admin-image-row { grid-template-columns: 1fr; }
   .admin-form-header { flex-direction: column; }
 }
+
+.admin-price-field {
+  align-items: center;
+  display: flex;
+  gap: 0.45rem;
+}
+
+.admin-price-field input {
+  flex: 1;
+}
+
+.admin-price-field span {
+  color: #555;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
